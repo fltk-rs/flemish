@@ -13,7 +13,7 @@ flemish = "0.1"
 A usage example:
 ```rust,no_run
 use flemish::{
-    button::Button, frame::Frame, Flex, OnEvent, Sandbox, Settings
+    button::Button, frame::Frame, Flex, FlexType, OnEvent, Sandbox, Settings
 };
 
 pub fn main() {
@@ -60,7 +60,7 @@ impl Sandbox for Counter {
     }
 
     fn view(&mut self) -> Flex {
-        let mut col = Flex::default().with_type(fltk_flex::FlexType::Column);
+        let mut col = Flex::default().with_type(FlexType::Column);
         let mut button1 = Button::default().with_label("Increment");
         button1.on_event(Message::IncrementPressed);
         Frame::default().with_label(&self.value.to_string());
@@ -74,7 +74,7 @@ impl Sandbox for Counter {
 */
 
 pub use fltk::*;
-pub use fltk_flex::Flex;
+pub use fltk_flex::*;
 use fltk::prelude::*;
 
 pub trait OnEvent<T>: WidgetExt
