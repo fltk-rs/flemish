@@ -1,0 +1,17 @@
+[package]
+name = "flemish"
+version = "0.1.0"
+authors = ["MoAlyousef <mohammed.alyousef@neurosrg.com>"]
+edition = "2018"
+description = "An Elmish architecture for fltk-rs"
+repository = "https://github.com/fltk-rs/flemish"
+documentation = "https://docs.rs/flemish"
+keywords = ["gui", "ui", "widgets", "bindings", "graphics"]
+categories = ["gui"]
+readme = "README.md"
+license = "MIT"
+exclude = ["./examples"]
+
+[dependencies]
+fltk = "1"
+fltk-flex = "0.1"
