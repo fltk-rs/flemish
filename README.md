@@ -12,7 +12,7 @@ flemish = "0.1"
 A usage example:
 ```rust
 use flemish::{
-    button::Button, frame::Frame, Flex, FlexType, OnEvent, Sandbox, Settings
+    button::Button, frame::Frame, prelude::*, Flex, FlexType, OnEvent, Sandbox, Settings,
 };
 
 pub fn main() {
