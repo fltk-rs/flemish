@@ -12,9 +12,7 @@ flemish = "0.1"
 
 A usage example:
 ```rust,no_run
-use flemish::{
-    button::Button, frame::Frame, prelude::*, Flex, FlexType, OnEvent, Sandbox, Settings,
-};
+use flemish::{button::Button, frame::Frame, prelude::*, Flex, OnEvent, Sandbox, Settings};
 
 pub fn main() {
     Counter::new().run(Settings {
@@ -34,8 +32,6 @@ enum Message {
     IncrementPressed,
     DecrementPressed,
 }
-
-impl OnEvent<Message> for Button {}
 
 impl Sandbox for Counter {
     type Message = Message;
@@ -60,7 +56,7 @@ impl Sandbox for Counter {
     }
 
     fn view(&mut self) -> Flex {
-        let mut col = Flex::default().with_type(FlexType::Column);
+        let mut col = Flex::default().column();
         let mut button1 = Button::default().with_label("Increment");
         button1.on_event(Message::IncrementPressed);
         Frame::default().with_label(&self.value.to_string());
@@ -72,19 +68,27 @@ impl Sandbox for Counter {
 }
 ```
 */
+#![allow(clippy::needless_doctest_main)]
 
+use fltk::prelude::*;
 pub use fltk::*;
 pub use fltk_flex::*;
-use fltk::prelude::*;
+pub use fltk_theme::*;
 
-pub trait OnEvent<T>: WidgetExt
+pub trait OnEvent<W, T>
 where
+    W: WidgetExt,
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event(&mut self, msg: T)
-    where
-        Self: Sized,
-    {
+    fn on_event(&mut self, msg: T);
+}
+
+impl<W, T> OnEvent<W, T> for W
+where
+    W: WidgetExt,
+    T: Send + Sync + Clone + 'static,
+{
+    fn on_event(&mut self, msg: T) {
         let (s, _) = app::channel::<T>();
         self.emit(s, msg);
     }
@@ -92,9 +96,19 @@ where
 
 #[derive(Default)]
 pub struct Settings {
+    pub pos: (i32, i32),
     pub size: (i32, i32),
     pub resizable: bool,
-    pub color: Option<enums::Color>,
+    pub background: Option<enums::Color>,
+    pub foreground: Option<enums::Color>,
+    pub background2: Option<enums::Color>,
+    pub inactive: Option<enums::Color>,
+    pub selection: Option<enums::Color>,
+    pub font: Option<enums::Font>,
+    pub font_size: u8,
+    pub scheme: Option<app::Scheme>,
+    pub color_map: Option<&'static [fltk_theme::ColorMap]>,
+    pub theme: Option<fltk_theme::ThemeType>,
 }
 
 pub trait Sandbox {
@@ -104,17 +118,59 @@ pub trait Sandbox {
     fn view(&mut self) -> Flex;
     fn update(&mut self, message: Self::Message);
     fn run(&mut self, settings: Settings) {
-        let a = app::App::default().with_scheme(app::Scheme::Gtk);
-        app::get_system_colors();
+        let a = app::App::default();
+        let color_theme = if let Some(color_map) = settings.color_map {
+            fltk_theme::ColorTheme::from_colormap(color_map)
+        } else {
+            fltk_theme::ColorTheme::from_colormap(fltk_theme::color_themes::BLACK_THEME)
+        };
+        color_theme.apply();
+        if let Some(theme) = settings.theme {
+            let widget_theme = fltk_theme::WidgetTheme::new(theme);
+            widget_theme.apply();
+        }
+        if let Some(color) = settings.background {
+            let c = color.to_rgb();
+            app::background(c.0, c.1, c.2);
+        }
+        if let Some(color) = settings.background2 {
+            let c = color.to_rgb();
+            app::background2(c.0, c.1, c.2);
+        }
+        if let Some(color) = settings.foreground {
+            let c = color.to_rgb();
+            app::foreground(c.0, c.1, c.2);
+        }
+        if let Some(color) = settings.inactive {
+            let c = color.to_rgb();
+            app::set_inactive_color(c.0, c.1, c.2);
+        }
+        if let Some(color) = settings.selection {
+            let c = color.to_rgb();
+            app::set_inactive_color(c.0, c.1, c.2);
+        }
+        if settings.font_size != 0 {
+            app::set_font_size(settings.font_size);
+        }
+        if let Some(scheme) = settings.scheme {
+            app::set_scheme(scheme);
+        } else {
+            app::set_scheme(app::Scheme::Gtk);
+        }
+        if let Some(font) = settings.font {
+            app::set_font(font);
+        }
         let (w, h) = settings.size;
         let w = if w == 0 { 400 } else { w };
         let h = if h == 0 { 300 } else { h };
+        let (x, y) = settings.pos;
         let mut win = window::Window::default()
             .with_size(w, h)
             .with_label(&self.title());
-        let mut grp = group::Group::default().size_of_parent();
+        if (x, y) != (0, 0) {
+            win.set_pos(x, y);
+        }
         self.view();
-        grp.end();
         win.end();
         win.make_resizable(settings.resizable);
         win.show();
@@ -122,10 +178,10 @@ pub trait Sandbox {
         while a.wait() {
             if let Some(msg) = r.recv() {
                 self.update(msg);
-                grp.remove_by_index(0);
-                let mut v = self.view();
-                grp.add(&*v);
-                v.resize(grp.x(), grp.y(), grp.w(), grp.h());
+                win.remove_by_index(0);
+                win.begin();
+                self.view();
+                win.end();
                 app::redraw();
             }
         }

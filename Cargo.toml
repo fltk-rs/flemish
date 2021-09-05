@@ -1,6 +1,6 @@
 [package]
 name = "flemish"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["MoAlyousef <mohammed.alyousef@neurosrg.com>"]
 edition = "2018"
 description = "An Elmish architecture for fltk-rs"
@@ -13,5 +13,6 @@ license = "MIT"
 exclude = ["./examples"]
 
 [dependencies]
-fltk = "1"
-fltk-flex = "0.1"
+fltk = { version = "1", features = ["enable-glwindow"] }
+fltk-flex = "0.1.3"
+fltk-theme = "0.1.8"
