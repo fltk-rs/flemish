@@ -72,7 +72,6 @@ impl Sandbox for Counter {
 
 use fltk::prelude::*;
 pub use fltk::*;
-pub use fltk_flex::*;
 pub use fltk_theme::*;
 
 pub trait OnEvent<W, T>
@@ -115,7 +114,7 @@ pub trait Sandbox {
     type Message: Clone + Send + Sync;
     fn new() -> Self;
     fn title(&self) -> String;
-    fn view(&mut self) -> Flex;
+    fn view(&mut self);
     fn update(&mut self, message: Self::Message);
     fn run(&mut self, settings: Settings) {
         let a = app::App::default();

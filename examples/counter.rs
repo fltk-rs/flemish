@@ -1,9 +1,12 @@
-use flemish::{button::Button, frame::Frame, prelude::*, Flex, OnEvent, Sandbox, Settings};
+use flemish::{
+    color_themes, button::Button, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
+};
 
 pub fn main() {
     Counter::new().run(Settings {
         size: (300, 100),
         resizable: true,
+        color_map: Some(color_themes::BLACK_THEME),
         ..Default::default()
     })
 }
@@ -41,14 +44,13 @@ impl Sandbox for Counter {
         }
     }
 
-    fn view(&mut self) -> Flex {
-        let mut col = Flex::default().column();
+    fn view(&mut self) {
+        let col = Flex::default_fill().column();
         let mut button1 = Button::default().with_label("Increment");
         button1.on_event(Message::IncrementPressed);
         Frame::default().with_label(&self.value.to_string());
         let mut button2 = Button::default().with_label("Decrement");
         button2.on_event(Message::DecrementPressed);
         col.end();
-        col
     }
 }
