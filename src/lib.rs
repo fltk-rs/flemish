@@ -179,7 +179,7 @@ pub trait Sandbox {
         while a.wait() {
             if let Some(msg) = r.recv() {
                 self.update(msg);
-                win.remove_by_index(0);
+                win.clear();
                 win.begin();
                 self.view();
                 win.end();
