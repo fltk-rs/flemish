@@ -6,13 +6,13 @@ An elmish architecture for fltk-rs, inspired by Iced.
 Add flemish to your dependencies:
 ```toml
 [dependencies]
-flemish = "0.2"
+flemish = "0.3"
 ```
 
 A usage example:
 ```rust
 use flemish::{
-    color_themes, button::Button, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
+    button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
 };
 
 pub fn main() {
@@ -59,11 +59,13 @@ impl Sandbox for Counter {
 
     fn view(&mut self) {
         let col = Flex::default_fill().column();
-        let mut button1 = Button::default().with_label("Increment");
-        button1.on_event(Message::IncrementPressed);
+        Button::default()
+            .with_label("Increment")
+            .on_event(Message::IncrementPressed);
         Frame::default().with_label(&self.value.to_string());
-        let mut button2 = Button::default().with_label("Decrement");
-        button2.on_event(Message::DecrementPressed);
+        Button::default()
+            .with_label("Decrement")
+            .on_event(Message::DecrementPressed);
         col.end();
     }
 }
