@@ -7,13 +7,13 @@ An elmish architecture for fltk-rs.
 Add flemish to your dependencies:
 ```toml,ignore
 [dependencies]
-flemish = "0.2"
+flemish = "0.3"
 ```
 
 A usage example:
 ```rust,no_run
 use flemish::{
-    color_themes, button::Button, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
+    button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
 };
 
 pub fn main() {
@@ -60,11 +60,13 @@ impl Sandbox for Counter {
 
     fn view(&mut self) {
         let col = Flex::default_fill().column();
-        let mut button1 = Button::default().with_label("Increment");
-        button1.on_event(Message::IncrementPressed);
+        Button::default()
+            .with_label("Increment")
+            .on_event(Message::IncrementPressed);
         Frame::default().with_label(&self.value.to_string());
-        let mut button2 = Button::default().with_label("Decrement");
-        button2.on_event(Message::DecrementPressed);
+        Button::default()
+            .with_label("Decrement")
+            .on_event(Message::DecrementPressed);
         col.end();
     }
 }
@@ -81,7 +83,9 @@ where
     W: WidgetExt,
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event(&mut self, msg: T);
+    fn on_event(self, msg: T) -> Self
+    where
+        Self: Sized;
 }
 
 impl<W, T> OnEvent<W, T> for W
@@ -89,9 +93,10 @@ where
     W: WidgetExt,
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event(&mut self, msg: T) {
+    fn on_event(mut self, msg: T) -> Self {
         let (s, _) = app::channel::<T>();
         self.emit(s, msg);
+        self
     }
 }
 
