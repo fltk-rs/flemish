@@ -118,7 +118,7 @@ pub struct Settings {
 }
 
 pub trait Sandbox {
-    type Message: Clone + Send + Sync;
+    type Message: Clone + Send + Sync + 'static;
     fn new() -> Self;
     fn title(&self) -> String;
     fn view(&mut self);
