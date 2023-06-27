@@ -86,6 +86,9 @@ where
     fn on_event(self, msg: T) -> Self
     where
         Self: Sized;
+    fn on_event_deferred<F: 'static + FnMut(&mut Self) -> T>(self, cb: F) -> Self
+    where
+        Self: Sized;
 }
 
 impl<W, T> OnEvent<W, T> for W
@@ -96,6 +99,14 @@ where
     fn on_event(mut self, msg: T) -> Self {
         let (s, _) = app::channel::<T>();
         self.emit(s, msg);
+        self
+    }
+
+    fn on_event_deferred<F: 'static + FnMut(&mut Self) -> T>(mut self, mut cb: F) -> Self {
+        let (s, _) = app::channel::<T>();
+        self.set_callback(move |w| {
+            s.send(cb(w));
+        });
         self
     }
 }
