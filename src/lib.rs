@@ -1,86 +1,12 @@
-/*!
-# Flemish
-
-An elmish architecture for fltk-rs.
-
-## Usage
-Add flemish to your dependencies:
-```toml,ignore
-[dependencies]
-flemish = "0.3"
-```
-
-A usage example:
-```rust,no_run
-use flemish::{
-    button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
-};
-
-pub fn main() {
-    Counter::new().run(Settings {
-        size: (300, 100),
-        resizable: true,
-        color_map: Some(color_themes::BLACK_THEME),
-        ..Default::default()
-    })
-}
-
-#[derive(Default)]
-struct Counter {
-    value: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-enum Message {
-    IncrementPressed,
-    DecrementPressed,
-}
-
-impl Sandbox for Counter {
-    type Message = Message;
-
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn title(&self) -> String {
-        String::from("Counter - fltk-rs")
-    }
-
-    fn update(&mut self, message: Message) {
-        match message {
-            Message::IncrementPressed => {
-                self.value += 1;
-            }
-            Message::DecrementPressed => {
-                self.value -= 1;
-            }
-        }
-    }
-
-    fn view(&mut self) {
-        let col = Flex::default_fill().column();
-        Button::default()
-            .with_label("Increment")
-            .on_event(Message::IncrementPressed);
-        Frame::default().with_label(&self.value.to_string());
-        Button::default()
-            .with_label("Decrement")
-            .on_event(Message::DecrementPressed);
-        col.end();
-    }
-}
-```
-*/
+#![doc = include_str!("../README.md")]
 #![allow(clippy::needless_doctest_main)]
 
 use fltk::prelude::*;
 pub use fltk::*;
 pub use fltk_theme::*;
 
-pub trait OnEvent<W, T>
+pub trait OnEvent<T>
 where
-    W: WidgetExt,
     T: Send + Sync + Clone + 'static,
 {
     fn on_event(self, msg: T) -> Self
@@ -91,7 +17,31 @@ where
         Self: Sized;
 }
 
-impl<W, T> OnEvent<W, T> for W
+pub trait OnMenuEvent<T>
+where
+    T: Send + Sync + Clone + 'static,
+{
+    fn on_item_event(
+        self,
+        name: &str,
+        shortcut: enums::Shortcut,
+        flag: menu::MenuFlag,
+        msg: T,
+    ) -> Self
+    where
+        Self: Sized;
+    fn on_item_event_deferred<F: 'static + FnMut(&mut Self) -> T>(
+        self,
+        name: &str,
+        shortcut: enums::Shortcut,
+        flag: menu::MenuFlag,
+        cb: F,
+    ) -> Self
+    where
+        Self: Sized;
+}
+
+impl<W, T> OnEvent<T> for W
 where
     W: WidgetExt,
     T: Send + Sync + Clone + 'static,
@@ -106,6 +56,38 @@ where
         let (s, _) = app::channel::<T>();
         self.set_callback(move |w| {
             s.send(cb(w));
+        });
+        self
+    }
+}
+
+impl<M, T> OnMenuEvent<T> for M
+where
+    M: MenuExt,
+    T: Send + Sync + Clone + 'static,
+{
+    fn on_item_event(
+        mut self,
+        name: &str,
+        shortcut: enums::Shortcut,
+        flag: menu::MenuFlag,
+        msg: T,
+    ) -> Self {
+        let (s, _) = app::channel::<T>();
+        self.add_emit(name, shortcut, flag, s, msg);
+        self
+    }
+
+    fn on_item_event_deferred<F: 'static + FnMut(&mut Self) -> T>(
+        mut self,
+        name: &str,
+        shortcut: enums::Shortcut,
+        flag: menu::MenuFlag,
+        mut cb: F,
+    ) -> Self {
+        let (s, _) = app::channel::<T>();
+        self.add(name, shortcut, flag, move |m| {
+            s.send(cb(m));
         });
         self
     }
@@ -126,6 +108,7 @@ pub struct Settings {
     pub scheme: Option<app::Scheme>,
     pub color_map: Option<&'static [fltk_theme::ColorMap]>,
     pub theme: Option<fltk_theme::ThemeType>,
+    pub ignore_esc_close: bool,
 }
 
 pub trait Sandbox {
@@ -166,7 +149,7 @@ pub trait Sandbox {
             let c = color.to_rgb();
             app::set_inactive_color(c.0, c.1, c.2);
         }
-        if settings.font_size != 0 {
+        if settings.font_size != app::font_size() as _ {
             app::set_font_size(settings.font_size);
         }
         if let Some(scheme) = settings.scheme {
@@ -186,6 +169,13 @@ pub trait Sandbox {
             .with_label(&self.title());
         if (x, y) != (0, 0) {
             win.set_pos(x, y);
+        }
+        if settings.ignore_esc_close {
+            win.set_callback(move |_| {
+                if app::event() == enums::Event::Close {
+                    app::quit();    
+                }
+            });
         }
         self.view();
         win.end();

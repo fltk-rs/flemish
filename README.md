@@ -4,13 +4,13 @@ An elmish architecture for fltk-rs, inspired by Iced.
 
 ## Usage
 Add flemish to your dependencies:
-```toml
+```toml,ignore
 [dependencies]
-flemish = "0.3"
+flemish = "0.4"
 ```
 
 A usage example:
-```rust
+```rust,no_run
 use flemish::{
     button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
 };
