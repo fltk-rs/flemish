@@ -149,7 +149,7 @@ pub trait Sandbox {
             let c = color.to_rgb();
             app::set_inactive_color(c.0, c.1, c.2);
         }
-        if settings.font_size != app::font_size() as _ {
+        if settings.font_size != 0 {
             app::set_font_size(settings.font_size);
         }
         if let Some(scheme) = settings.scheme {
