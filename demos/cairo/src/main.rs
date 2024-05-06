@@ -59,19 +59,19 @@ impl Sandbox for Counter {
                 "Command/Increment",
                 Shortcut::None,
                 MenuFlag::Normal,
-                Message::Inc,
+                |_| Message::Inc,
             )
             .on_item_event(
                 "Command/Decrement",
                 Shortcut::None,
                 MenuFlag::Normal,
-                Message::Dec,
+                |_| Message::Dec,
             )
             .on_item_event(
                 "Quit",
                 Shortcut::Ctrl | 'q',
                 MenuFlag::Normal,
-                Message::Quit,
+                |_| Message::Quit,
             );
         header.end();
         header.fixed(&menu, 50);
@@ -81,12 +81,12 @@ impl Sandbox for Counter {
         let hero = Flex::default();
         crate::cairobutton()
             .with_label("@#<")
-            .on_event(Message::Dec);
+            .on_event(|_| Message::Dec);
         let mut frame = Frame::default().with_label(&self.value.to_string());
         frame.set_label_size(60);
         crate::cairobutton()
             .with_label("@#>")
-            .on_event(Message::Inc);
+            .on_event(|_| Message::Inc);
         hero.end();
         page.end();
     }
