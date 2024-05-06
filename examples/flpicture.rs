@@ -50,7 +50,7 @@ impl Sandbox for Model {
     fn new() -> Self {
         Self {
             images: Vec::new(),
-            size: 100f64,
+            size: 1f64,
             current: 0,
         }
     }
@@ -65,8 +65,7 @@ impl Sandbox for Model {
         crate::menu(&mut header);
         crate::button("Open", "@#fileopen", &mut header).on_event(Message::Open);
         crate::button("Prev", "@#|<", &mut header).on_event(Message::Prev);
-        let mut size = crate::slider("Size").with_type(SliderType::Horizontal);
-        size.set_value(self.size);
+        let size = crate::slider("Size").with_type(SliderType::Horizontal);
         size.clone().on_event(Message::Size(size.value()));
         crate::button("Next", "@#>|", &mut header).on_event(Message::Next);
         crate::button("Remove", "@#1+", &mut header).on_event(Message::Remove);
@@ -76,8 +75,8 @@ impl Sandbox for Model {
             frame.set_image(None::<SharedImage>);
         } else if let Ok(mut image) = SharedImage::load(self.images[self.current].clone()) {
             image.scale(
-                (frame.width() as f64 * self.size) as i32 / 100,
-                (frame.height() as f64 * self.size) as i32 / 100,
+                (frame.width() as f64 * self.size) as i32,
+                (frame.height() as f64 * self.size) as i32,
                 true,
                 true
             );
@@ -217,7 +216,7 @@ fn menu(flex: &mut Flex) {
 fn slider(tooltip: &str) -> Slider {
     let mut element = Slider::default();
     element.set_tooltip(tooltip);
-    element.set_maximum(100f64);
+    element.set_value(element.maximum());
     element.set_precision(0);
     element
 }
