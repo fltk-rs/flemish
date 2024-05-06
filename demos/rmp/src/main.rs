@@ -3,8 +3,9 @@
 use {
     flemish::{
         app, button::Button, color_themes, frame::Frame, group::Flex, prelude::*,
-        OnEvent, Sandbox, Settings,
-        menu::MenuButton,
+        OnEvent, Sandbox, Settings, OnMenuEvent,
+        enums::Shortcut,
+        menu::{MenuFlag,MenuButton},
     },
     serde::{Deserialize, Serialize},
     std::{env, fs},
@@ -79,7 +80,7 @@ impl Sandbox for Counter {
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
         let mut header = Flex::default_fill();
-        crate::menu("Menu", &mut header).on_event(Message::Quit);
+        crate::menu("Menu", &mut header);
         header.end();
         Frame::default();
         crate::frame(&self.value.to_string(), &mut page);
@@ -125,9 +126,14 @@ impl Sandbox for Counter {
 }
 
 fn menu(tooltip: &str, flex: &mut Flex) -> MenuButton {
-    let mut element = MenuButton::default().with_label("@#menu");
+    let mut element = MenuButton::default().with_label("@#menu")
+        .on_item_event(
+            "@#1+  &Quit",
+            Shortcut::Ctrl | 'q',
+            MenuFlag::Normal,
+            Message::Quit,
+        );
     element.set_tooltip(tooltip);
-    element.add_choice("Quit");
     flex.fixed(&element, 50);
     element
 }

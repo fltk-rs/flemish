@@ -1,0 +1,13 @@
+[workspace]
+
+resolver = "2"
+members = [
+    "cairo",
+    "rmp",
+]
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+panic = "abort"
