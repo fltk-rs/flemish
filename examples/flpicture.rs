@@ -63,12 +63,12 @@ impl Sandbox for Model {
         let mut page = Flex::default_fill().column();
         let mut header = Flex::default();
         crate::menu(&mut header);
-        crate::button("Open", "@#fileopen", &mut header).on_event(Message::Open);
-        crate::button("Prev", "@#|<", &mut header).on_event(Message::Prev);
-        let size = crate::slider("Size").with_type(SliderType::Horizontal);
-        size.clone().on_event(Message::Size(size.value()));
-        crate::button("Next", "@#>|", &mut header).on_event(Message::Next);
-        crate::button("Remove", "@#1+", &mut header).on_event(Message::Remove);
+        crate::button("Open", "@#fileopen", &mut header).on_event(|_|Message::Open);
+        crate::button("Prev", "@#|<", &mut header).on_event(|_|Message::Prev);
+        let size = crate::slider("Size", self.size).with_type(SliderType::Horizontal);
+        size.clone().on_event(move |_|Message::Size(size.value()));
+        crate::button("Next", "@#>|", &mut header).on_event(|_|Message::Next);
+        crate::button("Remove", "@#1+", &mut header).on_event(|_|Message::Remove);
         header.end();
         let mut frame = crate::frame("Image");
         if self.images.is_empty() {
@@ -184,39 +184,38 @@ fn menu(flex: &mut Flex) {
             "&File/@#fileopen  &Open",
             Shortcut::Ctrl | 'o',
             MenuFlag::Normal,
-            Message::Open,
+            |_|Message::Open,
         )
         .on_item_event(
             "&File/@#1+  &Remove",
             Shortcut::Ctrl | 'd',
             MenuFlag::Normal,
-            Message::Remove,
+            |_|Message::Remove,
         )
         .on_item_event(
             "&Image/@#>|  &Next",
             Shortcut::Ctrl | 'n',
             MenuFlag::Normal,
-            Message::Next,
+            |_|Message::Next,
         )
         .on_item_event(
             "&Image/@#|<  &Prev",
             Shortcut::Ctrl | 'p',
             MenuFlag::Normal,
-            Message::Prev,
+            |_|Message::Prev,
         )
         .on_item_event(
             "@#1+  &Quit",
             Shortcut::Ctrl | 'q',
             MenuFlag::Normal,
-            Message::Quit,
+            |_|Message::Quit,
         );
 }
 
 
-fn slider(tooltip: &str) -> Slider {
+fn slider(tooltip: &str, sz: f64) -> Slider {
     let mut element = Slider::default();
     element.set_tooltip(tooltip);
-    element.set_value(element.maximum());
-    element.set_precision(0);
+    element.set_value(sz);
     element
 }
