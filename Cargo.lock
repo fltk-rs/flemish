@@ -40,7 +40,7 @@ checksum = "248e3bacc7dc6baa3b21e405ee045c3047101a49145e7e9eca583ab4c2ca5345"
 
 [[package]]
 name = "flemish"
-version = "0.4.3"
+version = "0.5.0"
 dependencies = [
  "fltk",
  "fltk-theme",

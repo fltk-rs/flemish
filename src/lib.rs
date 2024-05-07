@@ -9,10 +9,7 @@ pub trait OnEvent<T>
 where
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event(self, msg: T) -> Self
-    where
-        Self: Sized;
-    fn on_event_deferred<F: 'static + FnMut(&mut Self) -> T>(self, cb: F) -> Self
+    fn on_event<F: 'static + Fn(&Self) -> T>(self, cb: F) -> Self
     where
         Self: Sized;
 }
@@ -21,16 +18,7 @@ pub trait OnMenuEvent<T>
 where
     T: Send + Sync + Clone + 'static,
 {
-    fn on_item_event(
-        self,
-        name: &str,
-        shortcut: enums::Shortcut,
-        flag: menu::MenuFlag,
-        msg: T,
-    ) -> Self
-    where
-        Self: Sized;
-    fn on_item_event_deferred<F: 'static + FnMut(&mut Self) -> T>(
+    fn on_item_event<F: 'static + Fn(&Self) -> T>(
         self,
         name: &str,
         shortcut: enums::Shortcut,
@@ -46,13 +34,7 @@ where
     W: WidgetExt,
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event(mut self, msg: T) -> Self {
-        let (s, _) = app::channel::<T>();
-        self.emit(s, msg);
-        self
-    }
-
-    fn on_event_deferred<F: 'static + FnMut(&mut Self) -> T>(mut self, mut cb: F) -> Self {
+    fn on_event<F: 'static + Fn(&Self) -> T>(mut self, cb: F) -> Self {
         let (s, _) = app::channel::<T>();
         self.set_callback(move |w| {
             s.send(cb(w));
@@ -66,28 +48,16 @@ where
     M: MenuExt,
     T: Send + Sync + Clone + 'static,
 {
-    fn on_item_event(
+    fn on_item_event<F: 'static + Fn(&Self) -> T>(
         mut self,
         name: &str,
         shortcut: enums::Shortcut,
         flag: menu::MenuFlag,
-        msg: T,
+        cb: F,
     ) -> Self {
         let (s, _) = app::channel::<T>();
-        self.add_emit(name, shortcut, flag, s, msg);
-        self
-    }
-
-    fn on_item_event_deferred<F: 'static + FnMut(&mut Self) -> T>(
-        mut self,
-        name: &str,
-        shortcut: enums::Shortcut,
-        flag: menu::MenuFlag,
-        mut cb: F,
-    ) -> Self {
-        let (s, _) = app::channel::<T>();
-        self.add(name, shortcut, flag, move |m| {
-            s.send(cb(m));
+        self.add(name, shortcut, flag, move |w| {
+            s.send(cb(w));
         });
         self
     }

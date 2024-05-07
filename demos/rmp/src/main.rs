@@ -86,8 +86,8 @@ impl Sandbox for Counter {
         crate::frame(&self.value.to_string(), &mut page);
         let mut row = Flex::default();
         Frame::default();
-        crate::button("@#<", &mut row).on_event(Message::Dec);
-        crate::button("@#>", &mut row).on_event(Message::Inc);
+        crate::button("@#<", &mut row).on_event(|_| Message::Dec);
+        crate::button("@#>", &mut row).on_event(|_| Message::Inc);
         Frame::default();
         row.end();
         Frame::default();
@@ -131,7 +131,7 @@ fn menu(tooltip: &str, flex: &mut Flex) -> MenuButton {
             "@#1+  &Quit",
             Shortcut::Ctrl | 'q',
             MenuFlag::Normal,
-            Message::Quit,
+            |_| Message::Quit,
         );
     element.set_tooltip(tooltip);
     flex.fixed(&element, 50);

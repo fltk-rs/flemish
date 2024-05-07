@@ -53,13 +53,13 @@ impl Sandbox for MenuApp {
                 "Command/Increment",
                 Shortcut::None,
                 MenuFlag::Normal,
-                Message::IncrementPressed,
+                |_|Message::IncrementPressed,
             )
             .on_item_event(
                 "Command/Decrement",
                 Shortcut::None,
                 MenuFlag::Normal,
-                Message::DecrementPressed,
+                |_|Message::DecrementPressed,
             );
         col.fixed(&m, 40);
         Frame::default().with_label(&self.value.to_string());
