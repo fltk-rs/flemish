@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use flemish::{
     app,
     button::Button,
@@ -25,11 +27,16 @@ pub fn main() {
     })
 }
 
-const HEIGHT: i32 = 30;
 const PAD: i32 = 10;
+const HEIGHT: i32 = PAD * 3;
+
+struct Image {
+    file: String,
+    image: SharedImage,
+}
 
 struct Model {
-    images: Vec<String>,
+    list: Vec<Image>,
     size: f64,
     current: usize,
 }
@@ -49,7 +56,7 @@ impl Sandbox for Model {
 
     fn new() -> Self {
         Self {
-            images: Vec::new(),
+            list: Vec::new(),
             size: 1f64,
             current: 0,
         }
@@ -71,16 +78,16 @@ impl Sandbox for Model {
         crate::button("Remove", "@#1+", &mut header).on_event(|_|Message::Remove);
         header.end();
         let mut frame = crate::frame("Image");
-        if self.images.is_empty() {
+        if self.list.is_empty() {
             frame.set_image(None::<SharedImage>);
-        } else if let Ok(mut image) = SharedImage::load(self.images[self.current].clone()) {
-            image.scale(
+        } else {
+            self.list[self.current].image.scale(
                 (frame.width() as f64 * self.size) as i32,
                 (frame.height() as f64 * self.size) as i32,
                 true,
                 true
             );
-            frame.set_image(Some(image));
+            frame.set_image(Some(self.list[self.current].image.clone()));
         };
         page.end();
         page.set_pad(PAD);
@@ -117,26 +124,30 @@ impl Model {
         if dialog.count() > 0 {
             for item in 1..=dialog.count() {
                 if let Some(file) = dialog.value(item) {
-                    self.images.push(file);
+                    if let Ok(image) = SharedImage::load(file.clone()) {
+                        self.list.push(Image {
+                            file,
+                            image,
+                        });
+                    };
                 };
             }
-            self.images.sort();
             self.current = 0;
         };
     }
 
     fn prev(&mut self) {
-        if !self.images.is_empty() {
+        if !self.list.is_empty() {
             self.current = match self.current > 0 {
                 true => self.current.saturating_sub(1),
-                false => self.images.len() - 1,
+                false => self.list.len() - 1,
             };
         }
     }
 
     fn next(&mut self) {
-        if !self.images.is_empty() {
-            self.current = match self.current < self.images.len() - 1 {
+        if !self.list.is_empty() {
+            self.current = match self.current < self.list.len() - 1 {
                 true => self.current.saturating_add(1),
                 false => 0,
             };
@@ -144,14 +155,14 @@ impl Model {
     }
 
     fn remove(&mut self) {
-        if !self.images.is_empty() {
+        if !self.list.is_empty() {
             match choice2_default("Remove ...?", "Remove", "Cancel", "Permanent") {
                 Some(0) => {
-                    self.images.remove(self.current);
+                    self.list.remove(self.current);
                 }
                 Some(2) => {
-                    if fs::remove_file(self.images[self.current].clone()).is_ok() {
-                        self.images.remove(self.current);
+                    if fs::remove_file(self.list[self.current].file.clone()).is_ok() {
+                        self.list.remove(self.current);
                     }
                 }
                 _ => {}
