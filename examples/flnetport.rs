@@ -83,6 +83,7 @@ impl Sandbox for Model {
         page.set_frame(FrameType::FlatBox);
         page.fixed(&header, HEIGHT);
         page.fixed(&footer, HEIGHT);
+        page.end();
     }
 
     fn update(&mut self, message: Message) {
