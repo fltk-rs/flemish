@@ -1,11 +1,9 @@
-#![forbid(unsafe_code)]
-
 use flemish::{
     app,
     button::Button,
     color_themes,
     dialog::{choice2_default, FileChooser, FileChooserType},
-    enums::Shortcut,
+    enums::{Shortcut,FrameType},
     frame::Frame,
     group::Flex,
     image::SharedImage,
@@ -18,7 +16,7 @@ use std::fs;
 
 pub fn main() {
     Model::new().run(Settings {
-        size: (640, 360),
+        size: (640, 480),
         resizable: true,
         ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
@@ -47,7 +45,6 @@ enum Message {
     Next,
     Prev,
     Remove,
-    Size(f64),
     Quit,
 }
 
@@ -72,34 +69,38 @@ impl Sandbox for Model {
         crate::menu(&mut header);
         crate::button("Open", "@#fileopen", &mut header).on_event(|_|Message::Open);
         crate::button("Prev", "@#|<", &mut header).on_event(|_|Message::Prev);
-        let size = crate::slider("Size", self.size).with_type(SliderType::Horizontal);
-        size.clone().on_event(move |_|Message::Size(size.value()));
+        let mut size = crate::slider("Size").with_type(SliderType::Horizontal);
         crate::button("Next", "@#>|", &mut header).on_event(|_|Message::Next);
         crate::button("Remove", "@#1+", &mut header).on_event(|_|Message::Remove);
         header.end();
-        let mut frame = crate::frame("Image");
-        if self.list.is_empty() {
-            frame.set_image(None::<SharedImage>);
+        let mut frame = crate::frame("Image").with_id("image-frame");
+
+        page.end();
+        page.set_pad(PAD);
+        header.set_pad(PAD);
+        page.set_frame(FrameType::FlatBox);
+        page.set_margin(PAD);
+        page.fixed(&header, HEIGHT);
+
+        let image = if self.list.is_empty() {
+            None::<SharedImage>
         } else {
-            self.list[self.current].image.scale(
-                (frame.width() as f64 * self.size) as i32,
-                (frame.height() as f64 * self.size) as i32,
+            let mut image = self.list[self.current].image.clone();
+            image.scale(
+                (frame.w() as f64 * self.size) as i32,
+                (frame.h() as f64 * self.size) as i32,
                 true,
                 true
             );
-            frame.set_image(Some(self.list[self.current].image.clone()));
+            Some(image)
         };
-        page.end();
-        page.set_pad(PAD);
-        page.set_margin(PAD);
-        page.fixed(&header, HEIGHT);
+
+        frame.set_image(image.clone());
+        size.set_callback(move |s| slider_cb(s, image.clone()));
     }
 
     fn update(&mut self, message: Message) {
         match message {
-            Message::Size(value) => {
-                self.size = value;
-            }
             Message::Open => self.open(),
             Message::Prev => self.prev(),
             Message::Next => self.next(),
@@ -224,9 +225,23 @@ fn menu(flex: &mut Flex) {
 }
 
 
-fn slider(tooltip: &str, sz: f64) -> Slider {
+fn slider(tooltip: &str) -> Slider {
     let mut element = Slider::default();
     element.set_tooltip(tooltip);
-    element.set_value(sz);
+    element.set_value(element.maximum());
     element
+}
+
+fn slider_cb(s: &mut Slider, image: Option<SharedImage>) {
+    let mut frame: Frame = app::widget_from_id("image-frame").unwrap();
+    if let Some(mut image) = image.clone() {
+        image.scale(
+            (frame.width() as f64 * s.value()) as i32,
+            (frame.height() as f64 * s.value()) as i32,
+            true,
+            true
+        );
+        frame.set_image(Some(image));
+        app::redraw();
+    }
 }
