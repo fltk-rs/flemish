@@ -49,8 +49,7 @@ impl Sandbox for Counter {
         Button::default()
             .with_label("Increment")
             .on_event(|_|Message::IncrementPressed);
-        let mut f = Frame::default().with_label(&self.value.to_string());
-        f.set_label_size(40);
+        Frame::default().with_label(&self.value.to_string());
         Button::default()
             .with_label("Decrement")
             .on_event(|_|Message::DecrementPressed);

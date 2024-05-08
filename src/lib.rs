@@ -9,9 +9,9 @@ pub trait OnEvent<T>
 where
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event<F: 'static + Fn(&Self) -> T>(self, cb: F) -> Self
-    where
-        Self: Sized;
+    fn on_event<F: 'static + Fn(&Self) -> T>(self, cb: F) -> Self;
+    fn set_activate(self, flag: bool) -> Self;
+    fn set_visible(self, flag: bool) -> Self; 
 }
 
 pub trait OnMenuEvent<T>
@@ -24,9 +24,7 @@ where
         shortcut: enums::Shortcut,
         flag: menu::MenuFlag,
         cb: F,
-    ) -> Self
-    where
-        Self: Sized;
+    ) -> Self;
 }
 
 impl<W, T> OnEvent<T> for W
@@ -39,6 +37,22 @@ where
         self.set_callback(move |w| {
             s.send(cb(w));
         });
+        self
+    }
+    fn set_activate(mut self, flag: bool) -> Self {
+        if flag {
+            self.activate();
+        } else {
+            self.deactivate();
+        }
+        self
+    }
+    fn set_visible(mut self, flag: bool) -> Self {
+        if flag {
+            self.show();
+        } else {
+            self.hide();
+        }
         self
     }
 }
