@@ -4,11 +4,11 @@ use {
     flemish::{
         color_themes,
         app,
-        button::{Button,ButtonType}, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
-        menu::{MenuButton,MenuFlag,Choice},OnMenuEvent,enums::Shortcut,text::{WrapMode,TextBuffer,TextEditor},
-        valuator::{Counter,CounterType,Dial},
+        button::{Button,ButtonType}, ColorTheme, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
+        menu::{MenuButton,MenuFlag,Choice},OnMenuEvent,enums::{Shortcut,Color,FrameType,Font},text::{WrapMode,TextBuffer,TextEditor},
+        valuator::{Counter,CounterType,Dial},dialog::{FileChooserType,FileChooser,HelpDialog,alert_default},
     },
-    std::{env, mem, process::Command, fs, path::Path, thread},
+    std::{env, process::Command, fs, path::Path, thread},
 };
 
 pub fn main() {
@@ -40,20 +40,21 @@ struct Model {
     theme: bool,
     source: String,
     target: String,
-    lang: String,
+    lang: Vec<String>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum Message {
     Switch(),
     From(u8),
     To(u8),
     Speak(bool),
+    Source(String),
     Theme,
     Size(u8),
     Font(u8),
     Info,
-    Run,
+    Translate,
     Open,
     Save,
     Quit,
@@ -63,7 +64,7 @@ impl Sandbox for Model {
     type Message = Message;
 
     fn title(&self) -> String {
-        String::from("FlDialect")
+        String::from(NAME)
     }
 
     fn new() -> Self {
@@ -85,6 +86,8 @@ impl Sandbox for Model {
         let (w, h) = app::screen_size();
         let width = params[0] as i32 * U8 + params[1] as i32;
         let height = params[2] as i32 * U8 + params[3] as i32;
+        let mut lang = crate::list();
+        lang.sort();
         Self {
             width,
             height,
@@ -99,7 +102,7 @@ impl Sandbox for Model {
             speak: false,
             source: String::new(),
             target: String::new(),
-            lang: crate::list(),
+            lang,
         }
     }
 
@@ -109,10 +112,10 @@ impl Sandbox for Model {
         let mut header = Flex::default(); //HEADER
         crate::menu(&mut header);
         Frame::default();
-        let choice = crate::choice("From", &self.lang, self.from, &mut header);
+        let choice = crate::choice("From", &self.lang.join("|"), self.from, &mut header);
         choice.clone().on_event(move |_|Message::From(choice.value() as u8));
         crate::button("Switch", "@#refresh", &mut header).on_event(move |_|Message::Switch);
-        let choice = crate::choice("To", &self.lang, self.to, &mut header);
+        let choice = crate::choice("To", &self.lang.join("|"), self.to, &mut header);
         choice.clone().on_event(move |_|Message::To(choice.value() as u8));
         Frame::default();
         let mut button = crate::button("Speak", "@#<", &mut header).with_type(ButtonType::Toggle);
@@ -121,16 +124,17 @@ impl Sandbox for Model {
         header.end();
 
         let mut hero = Flex::default().column(); //HERO
-        crate::text("Source");
-        crate::text("Target");
+        let text = crate::text("Source", &self.source, self.theme, self.font, self.size);
+        text.clone().on_event(move |_|Message::Source(text.buffer().unwrap().text()));
+        crate::text("Target", &self.target, self.theme, self.font, self.size);
         hero.end();
 
         let mut footer = Flex::default(); //FOOTER
         crate::button("Open...", "@#fileopen", &mut footer).on_event(move |_|Message::Open);
         Frame::default();
-        let choice = crate::choice("Font", "Courier|Helvetica|Times", self.font, &mut footer);
+        let choice = crate::choice("Font", &app::fonts().join("|"), self.font, &mut footer);
         choice.clone().on_event(move |_|Message::Font(choice.value() as u8));
-        crate::button("Translate", "@#circle", &mut footer).on_event(move |_|Message::Run);
+        crate::button("Translate", "@#circle", &mut footer).on_event(move |_|Message::Translate);
         let counter = crate::counter("Size", self.size as f64, &mut footer).with_type(CounterType::Simple);
         counter.clone().on_event(move |_|Message::Size(counter.value() as u8));
         crate::dial(self.spinner as f64, &mut footer);
@@ -147,13 +151,16 @@ impl Sandbox for Model {
             page.fixed(&footer, HEIGHT);
             page.set_margin(PAD);
             page.set_pad(PAD);
+            page.set_frame(FrameType::FlatBox);
             let mut window = page.window().unwrap();
+            window.set_label(&format!("Translate from {} to {} - {NAME}", self.lang[self.from as usize], self.lang[self.to as usize]));
             window.size_range(
                 DEFAULT[0] as i32 * U8 + DEFAULT[1] as i32,
                 DEFAULT[2] as i32 * U8 + DEFAULT[3] as i32,
                 0,
                 0,
             );
+            self.theme();
         }
     }
 
@@ -162,20 +169,98 @@ impl Sandbox for Model {
             Message::Speak(value) => self.speak = value,
             Message::From(value) => self.from = value,
             Message::To(value) => self.to = value,
-            Message::Theme => self.theme = !self.theme,
-            Message::Switch() => mem::swap(&mut self.from, &mut self.to),
+            Message::Source(value) => self.source = value,
+            Message::Theme => {
+                self.theme = !self.theme;
+                self.theme();
+            }
+            Message::Switch() => {
+                let temp = self.from;
+                self.to = self.from;
+                self.from = temp;
+            },
             Message::Font(value) => self.font = value,
             Message::Size(value) => self.size = value,
-            Message::Open => {},
-            Message::Save => {},
-            Message::Run => {},
-            Message::Info => {},
+            Message::Open => self.open(),
+            Message::Save => self.save(),
+            Message::Translate => self.translate(),
+            Message::Info => crate::info(),
             Message::Quit => self.quit(),
         }
     }
 }
 
 impl Model {
+    fn open(&mut self) {
+        let mut dialog = FileChooser::new(
+            env::var("HOME").unwrap(),
+            "*.{txt,md}",
+            FileChooserType::Single,
+            "Open ...",
+        );
+        dialog.show();
+        while dialog.shown() {
+            app::wait();
+        }
+        if dialog.count() > 0 {
+            if let Some(file) = dialog.value(1) {
+                self.source = fs::read_to_string(Path::new(&file))
+                    .unwrap();
+            };
+        };
+    }
+    fn save(&self) {
+        if !self.target.is_empty() {
+            let mut dialog = FileChooser::new(
+                std::env::var("HOME").unwrap(),
+                "*.{txt,md}",
+                FileChooserType::Create,
+                "Save ...",
+            );
+            dialog.show();
+            while dialog.shown() {
+                app::wait();
+            }
+            if dialog.count() > 0 {
+                if let Some(file) = dialog.value(1) {
+                    fs::write(file, self.target.as_bytes())
+                    .unwrap();
+                };
+            };
+        } else {
+            alert_default("Target is empty.");
+        };
+    }
+    fn translate(&mut self) {
+        let from = self.lang[self.from as usize].clone();
+        let to = self.lang[self.to as usize].clone();
+        let source = self.source.clone();
+        if from != to && !source.is_empty() {
+            let speak = self.speak;
+            let handler = thread::spawn(move || -> String { crate::run(speak, from, to, source) });
+            while !handler.is_finished() {
+                app::wait();
+                app::sleep(0.02);
+                if self.spinner == DIAL - 1 {
+                    self.spinner = 0;
+                } else {
+                    self.spinner += 1;
+                }
+            }
+            if let Ok(text) = handler.join() {
+                self.target = text;
+            };
+        };
+    }
+    fn theme(&mut self) {
+        app::set_scheme(if self.theme {
+            ColorTheme::new(color_themes::DARK_THEME).apply();
+            app::Scheme::Plastic
+        } else {
+            ColorTheme::new(color_themes::TAN_THEME).apply();
+            app::Scheme::Base
+        });
+    }
     fn quit(&self) {
         let file = String::from(PATH) + NAME;
         let window = app::first_window().unwrap();
@@ -233,12 +318,21 @@ fn choice(tooltip: &str, choice: &str, value: u8, flex: &mut Flex) -> Choice {
     element
 }
 
-fn text(tooltip: &str) -> TextEditor {
+fn text(tooltip: &str, value: &str, theme: bool, font: u8, size: u8) -> TextEditor {
+    const COLORS: [[Color; 2]; 2] = [
+        [Color::from_hex(0xfdf6e3), Color::from_hex(0x586e75)],
+        [Color::from_hex(0x002b36), Color::from_hex(0x93a1a1)],
+    ];
     let mut element = TextEditor::default();
     element.set_tooltip(tooltip);
     element.set_linenumber_width(HEIGHT);
     element.set_buffer(TextBuffer::default());
     element.wrap_mode(WrapMode::AtBounds, 0);
+    element.buffer().unwrap().set_text(value);
+    element.set_color(COLORS[theme as usize][0]);
+    element.set_text_color(COLORS[theme as usize][1]);
+    element.set_text_font(Font::by_index(font as usize));
+    element.set_text_size(size as i32);
     element
 }
 
@@ -256,7 +350,7 @@ fn menu(flex: &mut Flex) {
             "@#circle  T&ranslate",
             Shortcut::Ctrl | 'r',
             MenuFlag::Normal,
-            |_| Message::Run,
+            |_| Message::Translate,
         )
         .on_item_event(
             "@#search  &Info",
@@ -270,6 +364,23 @@ fn menu(flex: &mut Flex) {
             MenuFlag::Normal,
             |_| Message::Quit,
         );
+}
+
+fn info() {
+    const INFO: &str = r#"<p>
+<a href="https://github.com/fltk-rs/demos/blob/master/fldialect">FlDialect</a>
+ is similar to
+ <a href="https://apps.gnome.org/Dialect">Dialect</a>
+ written using
+ <a href="https://fltk-rs.github.io/fltk-rs">FLTK-RS</a>
+</p>"#;
+    let mut dialog = HelpDialog::default();
+    dialog.set_value(INFO);
+    dialog.set_text_size(16);
+    dialog.show();
+    while dialog.shown() {
+        app::wait();
+    }
 }
 
 pub fn run(voice: bool, from: String, to: String, word: String) -> String {
@@ -293,9 +404,9 @@ pub fn run(voice: bool, from: String, to: String, word: String) -> String {
             "n",
             "-indent",
             "2",
-            "-from",
+            "-source",
             &from,
-            "-to",
+            "-target",
             &to,
             match word.split_whitespace().count() {
                 1 => "",
@@ -313,7 +424,7 @@ pub fn run(voice: bool, from: String, to: String, word: String) -> String {
     .to_string()
 }
 
-pub fn list() -> String {
+pub fn list() -> Vec<String> {
     if cfg!(target_family = "unix") {
         let run = Command::new("trans")
             .arg("-list-languages-english")
@@ -321,14 +432,13 @@ pub fn list() -> String {
             .expect("failed to execute bash");
         match run.status.success() {
             true => String::from_utf8_lossy(&run.stdout)
-                .split_whitespace()
+                .lines()
                 .map(str::to_string)
-                .collect::<Vec<String>>()
-                .join("|"),
+                .collect::<Vec<String>>(),
             false => panic!("\x1b[31m{}\x1b[0m", String::from_utf8_lossy(&run.stderr)),
         }
     } else {
-        "no way".to_string()
+        Vec::from([String::from("no way")])
     }
 }
 

@@ -1,19 +1,23 @@
+#![forbid(unsafe_code)]
+
 use flemish::{
-    button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
+    button::Button, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings, valuator::Dial,
 };
 
 pub fn main() {
     Counter::new().run(Settings {
-        size: (300, 100),
-        resizable: true,
-        color_map: Some(color_themes::BLACK_THEME),
+        size: (100, 300),
+        resizable: false,
+        ignore_esc_close: true,
         ..Default::default()
     })
 }
 
-#[derive(Default)]
+const PAD: i32 = 10;
+const DIAL: u8 = 120;
+
 struct Counter {
-    value: i32,
+    value: u8,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -26,7 +30,7 @@ impl Sandbox for Counter {
     type Message = Message;
 
     fn new() -> Self {
-        Self::default()
+        Self {value: 0}
     }
 
     fn title(&self) -> String {
@@ -36,16 +40,24 @@ impl Sandbox for Counter {
     fn update(&mut self, message: Message) {
         match message {
             Message::IncrementPressed => {
-                self.value += 1;
+                if self.value == DIAL - 1 {
+                    self.value = 0;
+                } else {
+                    self.value += 1;
+                }
             }
             Message::DecrementPressed => {
-                self.value -= 1;
+                if self.value == 0 {
+                    self.value = DIAL - 1;
+                } else {
+                    self.value -= 1;
+                }
             }
         }
     }
 
     fn view(&mut self) {
-        let col = Flex::default_fill().column();
+        let mut page = Flex::default_fill().column();
         Button::default()
             .with_label("Increment")
             .on_event(|_|Message::IncrementPressed);
@@ -54,6 +66,11 @@ impl Sandbox for Counter {
         Button::default()
             .with_label("Decrement")
             .on_event(|_|Message::DecrementPressed);
-        col.end();
+        let mut dial = Dial::default();
+        dial.set_maximum((DIAL / 4 * 3) as f64);
+        dial.set_value(self.value as f64);
+        dial.deactivate();
+        page.end();
+        page.set_margin(PAD);
     }
 }
