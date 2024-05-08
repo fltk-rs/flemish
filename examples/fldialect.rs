@@ -68,7 +68,7 @@ impl Sandbox for Model {
     }
 
     fn new() -> Self {
-        let file = String::from(PATH) + NAME;
+        let file = env::var("HOME").unwrap() + PATH + NAME;
         let params: Vec<u8> = if Path::new(&file).exists() {
             if let Ok(value) = fs::read(&file) {
                 if value.len() == DEFAULT.len() {
@@ -120,6 +120,7 @@ impl Sandbox for Model {
         Frame::default();
         let mut button = crate::button("Speak", "@#<", &mut header).with_type(ButtonType::Toggle);
         button.set(self.speak);
+        header.fixed(&button, 50);
         button.clone().on_event(move |_|Message::Speak(button.value()));
         header.end();
 
@@ -145,7 +146,7 @@ impl Sandbox for Model {
         page.end();
         {
             header.set_pad(PAD);
-            hero.set_pad(0);
+            hero.set_pad(PAD);
             footer.set_pad(PAD);
             page.fixed(&header, HEIGHT);
             page.fixed(&footer, HEIGHT);
@@ -262,7 +263,7 @@ impl Model {
         });
     }
     fn quit(&self) {
-        let file = String::from(PATH) + NAME;
+        let file = env::var("HOME").unwrap() + PATH + NAME;
         let window = app::first_window().unwrap();
         fs::write(
             file,
@@ -463,7 +464,7 @@ pub fn once() -> bool {
 }
 
 const NAME: &str = "FlDialect";
-const PATH: &str = "~/.config";
+const PATH: &str = "/.config";
 const DIAL: u8 = 120;
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
