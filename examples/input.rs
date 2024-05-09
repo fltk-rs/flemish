@@ -1,5 +1,5 @@
 use flemish::{
-    button::Button, color_themes, frame::Frame, group::Flex, input::Input, prelude::*, OnEvent,
+    app, color_themes, button::Button, frame::Frame, group::Flex, input::Input, prelude::*, OnEvent,
     Sandbox, Settings,
 };
 
@@ -7,7 +7,8 @@ pub fn main() {
     State::new().run(Settings {
         size: (300, 100),
         resizable: true,
-        color_map: Some(color_themes::BLACK_THEME),
+        color_map: Some(color_themes::DARK_THEME),
+        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }
