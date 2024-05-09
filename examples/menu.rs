@@ -1,5 +1,5 @@
 use flemish::{
-    color_themes, frame::Frame, group::Flex, enums::Shortcut, menu::{MenuBar, MenuFlag}, prelude::*, OnMenuEvent, Sandbox,
+    app, color_themes, frame::Frame, group::Flex, enums::Shortcut, menu::{MenuBar, MenuFlag}, prelude::*, OnMenuEvent, Sandbox,
     Settings,
 };
 
@@ -8,7 +8,8 @@ pub fn main() {
         size: (300, 300),
         resizable: true,
         ignore_esc_close: true,
-        color_map: Some(color_themes::BLACK_THEME),
+        color_map: Some(color_themes::DARK_THEME),
+        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

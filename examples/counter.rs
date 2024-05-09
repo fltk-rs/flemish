@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    button::Button, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings, valuator::Dial,
+    app, color_themes, button::Button, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings, valuator::Dial,
 };
 
 pub fn main() {
@@ -9,6 +9,8 @@ pub fn main() {
         size: (100, 300),
         resizable: false,
         ignore_esc_close: true,
+        color_map: Some(color_themes::DARK_THEME),
+        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

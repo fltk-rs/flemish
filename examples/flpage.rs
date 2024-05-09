@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
+    app,
     button::Button,
     color_themes,
     frame::Frame,
@@ -16,6 +17,7 @@ pub fn main() {
         resizable: true,
         ignore_esc_close: true,
         color_map: Some(color_themes::BLACK_THEME),
+        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

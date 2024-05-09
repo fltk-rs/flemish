@@ -22,7 +22,7 @@ pub fn main() {
         resizable: true,
         ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
-        scheme: Some(app::Scheme::Plastic),
+        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

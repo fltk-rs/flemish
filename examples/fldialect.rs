@@ -20,7 +20,7 @@ pub fn main() {
             ignore_esc_close: true,
             resizable: true,
             color_map: Some(color_themes::DARK_THEME),
-            scheme: Some(app::Scheme::Plastic),
+            scheme: Some(app::Scheme::Base),
             ..Default::default()
         });
     }
@@ -254,13 +254,12 @@ impl Model {
         };
     }
     fn theme(&mut self) {
-        app::set_scheme(if self.theme {
-            ColorTheme::new(color_themes::DARK_THEME).apply();
-            app::Scheme::Plastic
-        } else {
-            ColorTheme::new(color_themes::TAN_THEME).apply();
-            app::Scheme::Base
-        });
+        ColorTheme::new(
+            match self.theme {
+                true => color_themes::TAN_THEME,
+                false => color_themes::DARK_THEME,
+            }
+        ).apply();
     }
     fn quit(&self) {
         let file = env::var("HOME").unwrap() + PATH + NAME;
@@ -321,8 +320,8 @@ fn choice(tooltip: &str, choice: &str, value: u8, flex: &mut Flex) -> Choice {
 
 fn text(tooltip: &str, value: &str, theme: bool, font: u8, size: u8) -> TextEditor {
     const COLORS: [[Color; 2]; 2] = [
-        [Color::from_hex(0xfdf6e3), Color::from_hex(0x586e75)],
         [Color::from_hex(0x002b36), Color::from_hex(0x93a1a1)],
+        [Color::from_hex(0xfdf6e3), Color::from_hex(0x586e75)],
     ];
     let mut element = TextEditor::default();
     element.set_tooltip(tooltip);
