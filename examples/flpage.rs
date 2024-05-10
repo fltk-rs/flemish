@@ -1,15 +1,9 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    app,
-    button::Button,
-    color_themes,
-    frame::Frame,
-    group::Flex,
-    prelude::*,
-    OnEvent, Sandbox, Settings,
+    app, button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox,
+    Settings,
 };
-
 
 pub fn main() {
     MyApp::new().run(Settings {
@@ -138,4 +132,3 @@ impl Page for PageA {
         col.end();
     }
 }
-

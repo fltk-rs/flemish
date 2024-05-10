@@ -7,10 +7,10 @@ use {
         color_themes,
         enums::FrameType,
         frame::Frame,
-        valuator::{Counter,CounterType},
         group::Flex,
         input::IntInput,
         prelude::*,
+        valuator::{Counter, CounterType},
         OnEvent, Sandbox, Settings,
     },
     std::{
@@ -68,19 +68,24 @@ impl Sandbox for Model {
         for idx in 0..4 {
             let mut octet = crate::counter(&mut header);
             octet.set_value(self.address[idx] as f64);
-            octet.clone().on_event(move|_|Message::Octet(idx, octet.value() as u8));
+            octet
+                .clone()
+                .on_event(move |_| Message::Octet(idx, octet.value() as u8));
         }
         Frame::default();
         let mut port = IntInput::default().with_label("Port:");
         port.set_value(&self.port.to_string());
         header.fixed(&port, WIDTH);
-        port.clone().on_event(move|_|Message::Port(port.value().parse::<u32>().unwrap()));
+        port.clone()
+            .on_event(move |_| Message::Port(port.value().parse::<u32>().unwrap()));
         header.end();
         header.set_frame(FrameType::DownFrame);
         header.set_pad(PAD);
         Frame::default().with_label(&self.status);
         let footer = Flex::default();
-        Button::default().with_label("Check").on_event(move|_|Message::Check);
+        Button::default()
+            .with_label("Check")
+            .on_event(move |_| Message::Check);
         footer.end();
         page.set_frame(FrameType::FlatBox);
         page.fixed(&header, HEIGHT);
@@ -93,34 +98,40 @@ impl Sandbox for Model {
             Message::Octet(idx, octet) => self.address[idx] = octet,
             Message::Port(port) => self.port = port,
             Message::Check => {
-                let address: String = self.address
+                let address: String = self
+                    .address
                     .iter()
                     .map(|octet| octet.to_string())
                     .collect::<Vec<String>>()
-                    .join(".") + &format!(":{}", self.port);
+                    .join(".")
+                    + &format!(":{}", self.port);
 
                 if address.parse::<SocketAddr>().is_ok() {
                     self.status = "Scanning...".to_string();
                     let services = HashMap::from(SERVICES);
                     if services.contains_key(&self.port) {
-                        app::first_window().unwrap().set_label(&format!("{} - FlNetPort", services[&self.port]));
+                        app::first_window()
+                            .unwrap()
+                            .set_label(&format!("{} - FlNetPort", services[&self.port]));
                     }
                     let handler = thread::spawn(move || -> bool {
                         TcpStream::connect_timeout(
                             &address.parse::<SocketAddr>().unwrap(),
                             Duration::from_secs(8),
-                        ).is_ok()
+                        )
+                        .is_ok()
                     });
                     if let Ok(check) = handler.join() {
                         self.status = match check {
-                            true =>  "Status: Open",
+                            true => "Status: Open",
                             false => "Status: Closed",
-                        }.to_string();
+                        }
+                        .to_string();
                     }
                 } else {
                     self.status = "Invalid IP/Port".to_string();
                 }
-            },
+            }
         }
     }
 }
