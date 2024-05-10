@@ -81,8 +81,14 @@ cargo run --example flpicture
 ...
 ```
 
+### FlCalculator
+
 ![FlCalculator](/assets/flcalculator.gif)
 
-![FlCalculator](/assets/fldialect.gif)
+### FlDialect
 
-![FlCalculator](/assets/flpicture.gif)
+![FlDialect](/assets/fldialect.gif)
+
+### FlPicture
+
+![FlPicture](/assets/flpicture.gif)
