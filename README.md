@@ -70,3 +70,16 @@ impl Sandbox for Counter {
     }
 }
 ```
+## Examples
+
+To run the [examples:](/examples):
+```bash
+cargo run --example flcalculator
+cargo run --example fldialect
+cargo run --example flnetport
+cargo run --example flpicture
+...
+```
+![FlCalculator](/assets/flcalculator.gif)
+![FlCalculator](/assets/fldialect.gif)
+![FlCalculator](/assets/flpicture.gif)
