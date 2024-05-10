@@ -5,13 +5,13 @@ use flemish::{
     button::Button,
     color_themes,
     dialog::{choice2_default, FileChooser, FileChooserType},
-    enums::{Shortcut,FrameType},
+    enums::{FrameType, Shortcut},
     frame::Frame,
     group::Flex,
     image::SharedImage,
-    valuator::{Slider,SliderType},
     menu::{MenuButton, MenuFlag},
     prelude::*,
+    valuator::{Slider, SliderType},
     OnEvent, OnMenuEvent, Sandbox, Settings,
 };
 use std::fs;
@@ -69,11 +69,11 @@ impl Sandbox for Model {
         let mut page = Flex::default_fill().column();
         let mut header = Flex::default();
         crate::menu(&mut header);
-        crate::button("Open", "@#fileopen", &mut header).on_event(|_|Message::Open);
-        crate::button("Prev", "@#|<", &mut header).on_event(|_|Message::Prev);
+        crate::button("Open", "@#fileopen", &mut header).on_event(|_| Message::Open);
+        crate::button("Prev", "@#|<", &mut header).on_event(|_| Message::Prev);
         let mut size = crate::slider("Size").with_type(SliderType::Horizontal);
-        crate::button("Next", "@#>|", &mut header).on_event(|_|Message::Next);
-        crate::button("Remove", "@#1+", &mut header).on_event(|_|Message::Remove);
+        crate::button("Next", "@#>|", &mut header).on_event(|_| Message::Next);
+        crate::button("Remove", "@#1+", &mut header).on_event(|_| Message::Remove);
         header.end();
         let mut frame = crate::frame("Image").with_id("image-frame");
 
@@ -92,7 +92,7 @@ impl Sandbox for Model {
                 (frame.w() as f64 * self.size) as i32,
                 (frame.h() as f64 * self.size) as i32,
                 true,
-                true
+                true,
             );
             Some(image)
         };
@@ -128,10 +128,7 @@ impl Model {
             for item in 1..=dialog.count() {
                 if let Some(file) = dialog.value(item) {
                     if let Ok(image) = SharedImage::load(file.clone()) {
-                        self.list.push(Image {
-                            file,
-                            image,
-                        });
+                        self.list.push(Image { file, image });
                     };
                 };
             }
@@ -198,34 +195,33 @@ fn menu(flex: &mut Flex) {
             "&File/@#fileopen  &Open",
             Shortcut::Ctrl | 'o',
             MenuFlag::Normal,
-            |_|Message::Open,
+            |_| Message::Open,
         )
         .on_item_event(
             "&File/@#1+  &Remove",
             Shortcut::Ctrl | 'd',
             MenuFlag::Normal,
-            |_|Message::Remove,
+            |_| Message::Remove,
         )
         .on_item_event(
             "&Image/@#>|  &Next",
             Shortcut::Ctrl | 'n',
             MenuFlag::Normal,
-            |_|Message::Next,
+            |_| Message::Next,
         )
         .on_item_event(
             "&Image/@#|<  &Prev",
             Shortcut::Ctrl | 'p',
             MenuFlag::Normal,
-            |_|Message::Prev,
+            |_| Message::Prev,
         )
         .on_item_event(
             "@#1+  &Quit",
             Shortcut::Ctrl | 'q',
             MenuFlag::Normal,
-            |_|Message::Quit,
+            |_| Message::Quit,
         );
 }
-
 
 fn slider(tooltip: &str) -> Slider {
     let mut element = Slider::default();
@@ -241,7 +237,7 @@ fn slider_cb(s: &mut Slider, image: Option<SharedImage>) {
             (frame.width() as f64 * s.value()) as i32,
             (frame.height() as f64 * s.value()) as i32,
             true,
-            true
+            true,
         );
         frame.set_image(Some(image));
         app::redraw();

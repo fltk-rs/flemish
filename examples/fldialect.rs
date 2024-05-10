@@ -2,13 +2,20 @@
 
 use {
     flemish::{
-        color_themes,
         app,
-        button::{Button,ButtonType}, ColorTheme, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
-        menu::{MenuButton,MenuFlag,Choice},OnMenuEvent,enums::{Shortcut,Color,FrameType,Font},text::{WrapMode,TextBuffer,TextEditor},
-        valuator::{Counter,CounterType,Dial},dialog::{FileChooserType,FileChooser,HelpDialog,alert_default},
+        button::{Button, ButtonType},
+        color_themes,
+        dialog::{alert_default, FileChooser, FileChooserType, HelpDialog},
+        enums::{Color, Font, FrameType, Shortcut},
+        frame::Frame,
+        group::Flex,
+        menu::{Choice, MenuButton, MenuFlag},
+        prelude::*,
+        text::{TextBuffer, TextEditor, WrapMode},
+        valuator::{Counter, CounterType, Dial},
+        OnEvent, OnMenuEvent, Sandbox, Settings,
     },
-    std::{env, process::Command, fs, path::Path, thread},
+    std::{env, fs, path::Path, process::Command, thread},
 };
 
 pub fn main() {
@@ -16,7 +23,7 @@ pub fn main() {
         let mut app = Model::new();
         app.run(Settings {
             size: (app.width, app.height),
-            pos: (app.vertical,app.horizontal),
+            pos: (app.vertical, app.horizontal),
             ignore_esc_close: true,
             resizable: true,
             color_map: Some(color_themes::DARK_THEME),
@@ -37,7 +44,6 @@ struct Model {
     font: u8,
     size: u8,
     spinner: u8,
-    theme: bool,
     source: String,
     target: String,
     lang: Vec<String>,
@@ -50,7 +56,6 @@ enum Message {
     To(u8),
     Speak(bool),
     Source(String),
-    Theme,
     Size(u8),
     Font(u8),
     Info,
@@ -91,11 +96,10 @@ impl Sandbox for Model {
         Self {
             width,
             height,
-            theme: params[4] != 0,
-            from: params[5],
-            to: params[6],
-            font: params[7],
-            size: params[8],
+            from: params[4],
+            to: params[5],
+            font: params[6],
+            size: params[7],
             vertical: ((w + width as f64) / 4_f64) as i32,
             horizontal: ((h + height as f64) / 4_f64) as i32,
             spinner: 0,
@@ -113,34 +117,46 @@ impl Sandbox for Model {
         crate::menu(&mut header);
         Frame::default();
         let choice = crate::choice("From", &self.lang.join("|"), self.from, &mut header);
-        choice.clone().on_event(move |_|Message::From(choice.value() as u8));
-        crate::button("Switch", "@#refresh", &mut header).on_event(move |_|Message::Switch);
+        choice
+            .clone()
+            .on_event(move |_| Message::From(choice.value() as u8));
+        crate::button("Switch", "@#refresh", &mut header).on_event(move |_| Message::Switch);
         let choice = crate::choice("To", &self.lang.join("|"), self.to, &mut header);
-        choice.clone().on_event(move |_|Message::To(choice.value() as u8));
+        choice
+            .clone()
+            .on_event(move |_| Message::To(choice.value() as u8));
         Frame::default();
         let mut button = crate::button("Speak", "@#<", &mut header).with_type(ButtonType::Toggle);
         button.set(self.speak);
         header.fixed(&button, 50);
-        button.clone().on_event(move |_|Message::Speak(button.value()));
+        button
+            .clone()
+            .on_event(move |_| Message::Speak(button.value()));
         header.end();
 
         let mut hero = Flex::default().column(); //HERO
-        let text = crate::text("Source", &self.source, self.theme, self.font, self.size);
-        text.clone().on_event(move |_|Message::Source(text.buffer().unwrap().text()));
-        crate::text("Target", &self.target, self.theme, self.font, self.size);
+        let text = crate::text("Source", &self.source, self.font, self.size);
+        text.clone()
+            .on_event(move |_| Message::Source(text.buffer().unwrap().text()));
+        crate::text("Target", &self.target, self.font, self.size);
         hero.end();
 
         let mut footer = Flex::default(); //FOOTER
-        crate::button("Open...", "@#fileopen", &mut footer).on_event(move |_|Message::Open);
+        crate::button("Open...", "@#fileopen", &mut footer).on_event(move |_| Message::Open);
         Frame::default();
         let choice = crate::choice("Font", &app::fonts().join("|"), self.font, &mut footer);
-        choice.clone().on_event(move |_|Message::Font(choice.value() as u8));
-        crate::button("Translate", "@#circle", &mut footer).on_event(move |_|Message::Translate);
-        let counter = crate::counter("Size", self.size as f64, &mut footer).with_type(CounterType::Simple);
-        counter.clone().on_event(move |_|Message::Size(counter.value() as u8));
+        choice
+            .clone()
+            .on_event(move |_| Message::Font(choice.value() as u8));
+        crate::button("Translate", "@#circle", &mut footer).on_event(move |_| Message::Translate);
+        let counter =
+            crate::counter("Size", self.size as f64, &mut footer).with_type(CounterType::Simple);
+        counter
+            .clone()
+            .on_event(move |_| Message::Size(counter.value() as u8));
         crate::dial(self.spinner as f64, &mut footer);
         Frame::default();
-        crate::button("Save as...", "@#filesaveas", &mut footer).on_event(move |_|Message::Save);
+        crate::button("Save as...", "@#filesaveas", &mut footer).on_event(move |_| Message::Save);
         footer.end();
 
         page.end();
@@ -154,14 +170,16 @@ impl Sandbox for Model {
             page.set_pad(PAD);
             page.set_frame(FrameType::FlatBox);
             let mut window = page.window().unwrap();
-            window.set_label(&format!("Translate from {} to {} - {NAME}", self.lang[self.from as usize], self.lang[self.to as usize]));
+            window.set_label(&format!(
+                "Translate from {} to {} - {NAME}",
+                self.lang[self.from as usize], self.lang[self.to as usize]
+            ));
             window.size_range(
                 DEFAULT[0] as i32 * U8 + DEFAULT[1] as i32,
                 DEFAULT[2] as i32 * U8 + DEFAULT[3] as i32,
                 0,
                 0,
             );
-            self.theme();
         }
     }
 
@@ -171,15 +189,11 @@ impl Sandbox for Model {
             Message::From(value) => self.from = value,
             Message::To(value) => self.to = value,
             Message::Source(value) => self.source = value,
-            Message::Theme => {
-                self.theme = !self.theme;
-                self.theme();
-            }
             Message::Switch() => {
                 let temp = self.from;
                 self.to = self.from;
                 self.from = temp;
-            },
+            }
             Message::Font(value) => self.font = value,
             Message::Size(value) => self.size = value,
             Message::Open => self.open(),
@@ -205,8 +219,7 @@ impl Model {
         }
         if dialog.count() > 0 {
             if let Some(file) = dialog.value(1) {
-                self.source = fs::read_to_string(Path::new(&file))
-                    .unwrap();
+                self.source = fs::read_to_string(Path::new(&file)).unwrap();
             };
         };
     }
@@ -224,8 +237,7 @@ impl Model {
             }
             if dialog.count() > 0 {
                 if let Some(file) = dialog.value(1) {
-                    fs::write(file, self.target.as_bytes())
-                    .unwrap();
+                    fs::write(file, self.target.as_bytes()).unwrap();
                 };
             };
         } else {
@@ -253,14 +265,6 @@ impl Model {
             };
         };
     }
-    fn theme(&mut self) {
-        ColorTheme::new(
-            match self.theme {
-                true => color_themes::TAN_THEME,
-                false => color_themes::DARK_THEME,
-            }
-        ).apply();
-    }
     fn quit(&self) {
         let file = env::var("HOME").unwrap() + PATH + NAME;
         let window = app::first_window().unwrap();
@@ -271,7 +275,6 @@ impl Model {
                 (window.width() % U8) as u8,
                 (window.height() / U8) as u8,
                 (window.height() % U8) as u8,
-                self.theme as u8,
                 self.from,
                 self.to,
                 self.font,
@@ -318,51 +321,41 @@ fn choice(tooltip: &str, choice: &str, value: u8, flex: &mut Flex) -> Choice {
     element
 }
 
-fn text(tooltip: &str, value: &str, theme: bool, font: u8, size: u8) -> TextEditor {
-    const COLORS: [[Color; 2]; 2] = [
-        [Color::from_hex(0x002b36), Color::from_hex(0x93a1a1)],
-        [Color::from_hex(0xfdf6e3), Color::from_hex(0x586e75)],
-    ];
+fn text(tooltip: &str, value: &str, font: u8, size: u8) -> TextEditor {
     let mut element = TextEditor::default();
     element.set_tooltip(tooltip);
     element.set_linenumber_width(HEIGHT);
     element.set_buffer(TextBuffer::default());
     element.wrap_mode(WrapMode::AtBounds, 0);
     element.buffer().unwrap().set_text(value);
-    element.set_color(COLORS[theme as usize][0]);
-    element.set_text_color(COLORS[theme as usize][1]);
+    element.set_color(Color::from_hex(0x002b36));
+    element.set_text_color(Color::from_hex(0x93a1a1));
     element.set_text_font(Font::by_index(font as usize));
     element.set_text_size(size as i32);
     element
 }
 
 fn menu(flex: &mut Flex) {
-    let element = MenuButton::default()
-        .with_label("@#menu");
+    let element = MenuButton::default().with_label("@#menu");
     flex.fixed(&element, 50);
-    element.on_item_event(
-            "&View/&Night mode\t",
-            Shortcut::Ctrl | 'n',
-            MenuFlag::Toggle,
-            |_| Message::Theme,
-        )
+    element
         .on_item_event(
             "@#circle  T&ranslate",
             Shortcut::Ctrl | 'r',
             MenuFlag::Normal,
-            |_| Message::Translate,
+            move |_| Message::Translate,
         )
         .on_item_event(
             "@#search  &Info",
             Shortcut::Ctrl | 'i',
             MenuFlag::Normal,
-            |_| Message::Info,
+            move |_| Message::Info,
         )
         .on_item_event(
             "@#1+  &Quit",
             Shortcut::Ctrl | 'q',
             MenuFlag::Normal,
-            |_| Message::Quit,
+            move |_| Message::Quit,
         );
 }
 
