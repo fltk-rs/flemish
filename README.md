@@ -72,7 +72,7 @@ impl Sandbox for Counter {
 ```
 ## Examples
 
-To run the [examples:](/examples):
+To run the [examples:](/examples)
 ```bash
 cargo run --example flcalculator
 cargo run --example fldialect
@@ -81,14 +81,14 @@ cargo run --example flpicture
 ...
 ```
 
-### FlCalculator
+### [FlCalculator](/examples/flcalculator.rs)
 
 ![FlCalculator](/assets/flcalculator.gif)
 
-### FlDialect
+### [FlDialect](/examples/fldialect.rs)
 
 ![FlDialect](/assets/fldialect.gif)
 
-### FlPicture
+### [FlPicture](/examples/flpicture.rs)
 
 ![FlPicture](/assets/flpicture.gif)
