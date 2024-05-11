@@ -99,6 +99,6 @@ cargo run --example flpicture
 
 ## Demo
 
-### [FlErrands](/demo/flerrands)
+### [FlErrands](/demos/flerrands)
 
-![FlPicture](/demo/flerrands/assets/flerrands.gif)
+![FlPicture](/demos/flerrands/assets/flerrands.gif)
