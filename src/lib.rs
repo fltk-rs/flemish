@@ -93,6 +93,8 @@ pub struct Settings {
     pub color_map: Option<&'static [fltk_theme::ColorMap]>,
     pub theme: Option<fltk_theme::ThemeType>,
     pub ignore_esc_close: bool,
+    pub size_range: Option<(i32, i32, i32, i32)>,
+    pub on_close_fn: Option<Box<dyn FnMut(&mut window::Window)>>,
 }
 
 pub trait Sandbox {
@@ -154,12 +156,18 @@ pub trait Sandbox {
         if (x, y) != (0, 0) {
             win.set_pos(x, y);
         }
+        if let Some((min_w, min_h, max_w, max_h)) = settings.size_range {
+            win.size_range(min_w, min_h, max_w, max_h);
+        }
         if settings.ignore_esc_close {
             win.set_callback(move |_| {
                 if app::event() == enums::Event::Close {
                     app::quit();    
                 }
             });
+        }
+        if let Some(close_fn) = settings.on_close_fn {
+            win.set_callback(close_fn);
         }
         self.view();
         win.end();
