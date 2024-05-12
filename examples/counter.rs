@@ -1,7 +1,8 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    app, color_themes, button::Button, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings, valuator::Dial,
+    app, button::Button, color_themes, frame::Frame, group::Flex, prelude::*, valuator::Dial,
+    OnEvent, Sandbox, Settings,
 };
 
 pub fn main() {
@@ -32,7 +33,7 @@ impl Sandbox for Counter {
     type Message = Message;
 
     fn new() -> Self {
-        Self {value: 0}
+        Self { value: 0 }
     }
 
     fn title(&self) -> String {
@@ -62,11 +63,11 @@ impl Sandbox for Counter {
         let mut page = Flex::default_fill().column();
         Button::default()
             .with_label("Increment")
-            .on_event(|_|Message::IncrementPressed);
+            .on_event(|_| Message::IncrementPressed);
         Frame::default().with_label(&self.value.to_string());
         Button::default()
             .with_label("Decrement")
-            .on_event(|_|Message::DecrementPressed);
+            .on_event(|_| Message::DecrementPressed);
         let mut dial = Dial::default();
         dial.set_maximum((DIAL / 4 * 3) as f64);
         dial.set_value(self.value as f64);

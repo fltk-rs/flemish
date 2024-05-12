@@ -5,16 +5,16 @@ use {
         app,
         button::Button,
         color_themes,
-        enums::{Color,FrameType,Align,Font},
+        enums::{Align, Color, Font, FrameType},
         frame::Frame,
         group::Flex,
-        text::{TextDisplay,WrapMode,TextBuffer,StyleTableEntry},
-        menu::Choice,
         input::Input,
+        menu::Choice,
         prelude::*,
+        text::{StyleTableEntry, TextBuffer, TextDisplay, WrapMode},
         OnEvent, Sandbox, Settings,
     },
-    std::{thread,process::Command},
+    std::{process::Command, thread},
 };
 
 pub fn main() {
@@ -62,7 +62,8 @@ impl Sandbox for Model {
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
         let mut header = Flex::default();
-        crate::choice(self.method as i32, &mut header).on_event(move |choice| Message::Method(choice.value() as u8));
+        crate::choice(self.method as i32, &mut header)
+            .on_event(move |choice| Message::Method(choice.value() as u8));
         header.fixed(&Frame::default().with_label("https://"), WIDTH);
         crate::input(&self.url).on_event(move |input| Message::Url(input.value()));
         crate::button(&mut header).on_event(move |_| Message::Request);
@@ -71,7 +72,12 @@ impl Sandbox for Model {
         let mut footer = Flex::default();
         footer.fixed(&Frame::default().with_label("Status: "), WIDTH);
         Frame::default();
-        footer.fixed(&Frame::default().with_align(Align::Left | Align::Inside).with_label(&self.status),WIDTH);
+        footer.fixed(
+            &Frame::default()
+                .with_align(Align::Left | Align::Inside)
+                .with_label(&self.status),
+            WIDTH,
+        );
         footer.end();
         page.end();
         {
@@ -93,14 +99,13 @@ impl Sandbox for Model {
                     true => self.url.clone(),
                     false => String::from("https://") + &self.url,
                 };
-                let handler = thread::spawn(move || -> (bool, String) {
-                    crate::curl(url)
-                });
+                let handler = thread::spawn(move || -> (bool, String) { crate::curl(url) });
                 if let Ok((status, check)) = handler.join() {
                     self.status = match status {
                         true => "OK",
                         false => "Fail",
-                    }.to_string();
+                    }
+                    .to_string();
                     self.responce = check;
                 }
             }
@@ -148,14 +153,17 @@ fn input(value: &str) -> Input {
 
 fn curl(url: String) -> (bool, String) {
     let run = Command::new("curl")
-        .args(["-s", &url ])
+        .args(["-s", &url])
         .output()
         .expect("failed to execute bash");
-    (run.status.success(), String::from_utf8_lossy(match run.status.success() {
-        true => &run.stdout,
-        false => &run.stderr,
-    })
-    .to_string())
+    (
+        run.status.success(),
+        String::from_utf8_lossy(match run.status.success() {
+            true => &run.stdout,
+            false => &run.stderr,
+        })
+        .to_string(),
+    )
 }
 
 const PAD: i32 = 10;

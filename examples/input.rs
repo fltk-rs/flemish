@@ -1,6 +1,6 @@
 use flemish::{
-    app, color_themes, button::Button, frame::Frame, group::Flex, input::Input, prelude::*, OnEvent,
-    Sandbox, Settings,
+    app, button::Button, color_themes, frame::Frame, group::Flex, input::Input, prelude::*,
+    OnEvent, Sandbox, Settings,
 };
 
 pub fn main() {
@@ -50,7 +50,7 @@ impl Sandbox for State {
         name.set_value(&self.text);
         Button::default()
             .with_label("Submit")
-            .on_event(move |_|Message::Submit(name.value()));
+            .on_event(move |_| Message::Submit(name.value()));
         col.end();
     }
 }

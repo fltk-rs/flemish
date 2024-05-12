@@ -6,9 +6,9 @@ use {
         button::{Button, ButtonType},
         color_themes,
         dialog::{alert_default, FileChooser, FileChooserType, HelpDialog},
-        enums::{Color, Font, FrameType, Shortcut, Cursor, Event},
+        enums::{Color, Cursor, Event, Font, FrameType, Shortcut},
         frame::Frame,
-        group::{Flex,FlexType},
+        group::{Flex, FlexType},
         menu::{Choice, MenuButton, MenuFlag},
         prelude::*,
         text::{TextBuffer, TextEditor, WrapMode},
@@ -311,7 +311,9 @@ impl Model {
             while !handler.is_finished() {
                 app::wait();
                 app::sleep(0.02);
-                app::widget_from_id::<Dial>("SPINNER").unwrap().do_callback();
+                app::widget_from_id::<Dial>("SPINNER")
+                    .unwrap()
+                    .do_callback();
             }
             if let Ok(text) = handler.join() {
                 self.target = text;

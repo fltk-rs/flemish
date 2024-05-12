@@ -1,6 +1,11 @@
 use flemish::{
-    app, color_themes, frame::Frame, group::Flex, enums::Shortcut, menu::{MenuBar, MenuFlag}, prelude::*, OnMenuEvent, Sandbox,
-    Settings,
+    app, color_themes,
+    enums::Shortcut,
+    frame::Frame,
+    group::Flex,
+    menu::{MenuBar, MenuFlag},
+    prelude::*,
+    OnMenuEvent, Sandbox, Settings,
 };
 
 pub fn main() {
@@ -54,13 +59,13 @@ impl Sandbox for MenuApp {
                 "Command/Increment",
                 Shortcut::None,
                 MenuFlag::Normal,
-                |_|Message::IncrementPressed,
+                |_| Message::IncrementPressed,
             )
             .on_item_event(
                 "Command/Decrement",
                 Shortcut::None,
                 MenuFlag::Normal,
-                |_|Message::DecrementPressed,
+                |_| Message::DecrementPressed,
             );
         col.fixed(&m, 40);
         Frame::default().with_label(&self.value.to_string());

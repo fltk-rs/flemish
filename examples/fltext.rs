@@ -5,18 +5,17 @@ use {
         app,
         button::Button,
         color_themes,
-        enums::{Color,FrameType,Align,Font,Shortcut},
+        enums::{Align, Color, Font, FrameType, Shortcut},
         frame::Frame,
-        tree::Tree,
-        group::{Tabs,Flex,TabsOverflow},
-        text::{TextEditor,WrapMode,TextBuffer,StyleTableEntry},
-        menu::{MenuButton, MenuFlag},
-        OnMenuEvent,
+        group::{Flex, Tabs, TabsOverflow},
         input::Input,
+        menu::{MenuButton, MenuFlag},
         prelude::*,
-        OnEvent, Sandbox, Settings,
+        text::{StyleTableEntry, TextBuffer, TextEditor, WrapMode},
+        tree::Tree,
+        OnEvent, OnMenuEvent, Sandbox, Settings,
     },
-    std::{thread,process::Command},
+    std::{process::Command, thread},
 };
 
 pub fn main() {
@@ -30,7 +29,7 @@ pub fn main() {
     })
 }
 
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy)]
 struct Style {
     font: u8,
     size: u8,
@@ -63,18 +62,13 @@ impl Sandbox for Model {
 
     fn new() -> Self {
         Self {
-            style: Style {
-                font: 0,
-                size: 14,
-            },
-            objects: Vec::from([
-                Object{
-                    change: false,
-                    path: String::from("."),
-                    file: String::from("untitled_0.txt"),
-                    text: String::new(),
-                }
-            ]),
+            style: Style { font: 0, size: 14 },
+            objects: Vec::from([Object {
+                change: false,
+                path: String::from("."),
+                file: String::from("untitled_0.txt"),
+                text: String::new(),
+            }]),
         }
     }
 
@@ -91,11 +85,13 @@ impl Sandbox for Model {
         let mut right = Flex::default_fill();
         let mut tabs = Tabs::default(); //RIGHT
         for obj in &self.objects {
-            let tab = Flex::default().with_label(&format!("    {}    ", obj.file)).column();
+            let tab = Flex::default()
+                .with_label(&format!("    {}    ", obj.file))
+                .column();
             crate::text(&obj.file, &obj.text, self.style);
             tab.end();
             files.add(&format!("{}/{}", obj.path, obj.file));
-        };
+        }
         tabs.end();
         right.end();
         page.end();
@@ -116,15 +112,15 @@ impl Sandbox for Model {
 
     fn update(&mut self, message: Message) {
         match message {
-            Message::New => self.objects.push(Object{
+            Message::New => self.objects.push(Object {
                 change: false,
                 path: String::from("."),
                 file: String::from(format!("untitled_{}.txt", self.objects.len())),
                 text: String::new(),
             }),
             Message::Quit => app::quit(),
-            Message::Save => {},
-            Message::Open => {},
+            Message::Save => {}
+            Message::Open => {}
         }
     }
 }
@@ -145,7 +141,8 @@ fn text(tooltip: &str, value: &str, style: Style) -> TextEditor {
 
 fn menu() -> MenuButton {
     let element = MenuButton::default().with_label("@#menu");
-    element.clone()
+    element
+        .clone()
         .on_item_event(
             "@#+  &New",
             Shortcut::Ctrl | 'n',
