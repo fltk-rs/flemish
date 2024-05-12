@@ -6,9 +6,9 @@ use {
         button::{Button, ButtonType},
         color_themes,
         dialog::{alert_default, FileChooser, FileChooserType, HelpDialog},
-        enums::{Color, Font, FrameType, Shortcut},
+        enums::{Color, Font, FrameType, Shortcut, Cursor, Event},
         frame::Frame,
-        group::Flex,
+        group::{Flex,FlexType},
         menu::{Choice, MenuButton, MenuFlag},
         prelude::*,
         text::{TextBuffer, TextEditor, WrapMode},
@@ -113,7 +113,7 @@ impl Sandbox for Model {
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
 
-        let mut header = Flex::default(); //HEADER
+        let mut header = Flex::default();
         crate::menu(&mut header);
         Frame::default();
         let choice = crate::choice("From", &self.lang.join("|"), self.from, &mut header);
@@ -134,10 +134,50 @@ impl Sandbox for Model {
             .on_event(move |_| Message::Speak(button.value()));
         header.end();
 
-        let mut hero = Flex::default().column(); //HERO
-        let text = crate::text("Source", &self.source, self.font, self.size);
+        let mut hero = Flex::default().column().with_id("HERO");
+        let text = crate::text("Source", &self.source, self.font, self.size).with_id("SOURCE");
         text.clone()
             .on_event(move |_| Message::Source(text.buffer().unwrap().text()));
+        let mut handle = Frame::default().with_id("HANDLE");
+        handle.handle(move |frame, event| {
+            let mut hero = app::widget_from_id::<Flex>("HERO").unwrap();
+            match event {
+                Event::Push => true,
+                Event::Drag => {
+                    let editor = app::widget_from_id::<TextEditor>("SOURCE").unwrap();
+                    match hero.get_type() {
+                        FlexType::Column => {
+                            if (hero.y()..=hero.height() + hero.y() - frame.height())
+                                .contains(&app::event_y())
+                            {
+                                hero.fixed(&editor, app::event_y() - hero.y());
+                            }
+                        }
+                        FlexType::Row => {
+                            if (hero.x()..=hero.width() + hero.x() - frame.width())
+                                .contains(&app::event_x())
+                            {
+                                hero.fixed(&editor, app::event_x() - hero.x());
+                            }
+                        }
+                    }
+                    app::redraw();
+                    true
+                }
+                Event::Enter => {
+                    frame.window().unwrap().set_cursor(match hero.get_type() {
+                        FlexType::Column => Cursor::NS,
+                        FlexType::Row => Cursor::WE,
+                    });
+                    true
+                }
+                Event::Leave => {
+                    frame.window().unwrap().set_cursor(Cursor::Arrow);
+                    true
+                }
+                _ => false,
+            }
+        });
         crate::text("Target", &self.target, self.font, self.size);
         hero.end();
 
@@ -162,7 +202,24 @@ impl Sandbox for Model {
         page.end();
         {
             header.set_pad(PAD);
-            hero.set_pad(PAD);
+            hero.set_pad(0);
+            hero.fixed(&handle, PAD);
+            hero.handle(move |flex, event| {
+                if event == Event::Resize {
+                    let from = app::widget_from_id::<TextEditor>("SOURCE").unwrap();
+                    if flex.width() < flex.height() {
+                        flex.set_type(FlexType::Column);
+                        flex.fixed(&from, 0);
+                    } else {
+                        flex.set_type(FlexType::Row);
+                        flex.fixed(&from, 0);
+                    };
+                    flex.fixed(&app::widget_from_id::<Frame>("HANDLE").unwrap(), PAD);
+                    true
+                } else {
+                    false
+                }
+            });
             footer.set_pad(PAD);
             page.fixed(&header, HEIGHT);
             page.fixed(&footer, HEIGHT);
@@ -254,11 +311,7 @@ impl Model {
             while !handler.is_finished() {
                 app::wait();
                 app::sleep(0.02);
-                if self.spinner == DIAL - 1 {
-                    self.spinner = 0;
-                } else {
-                    self.spinner += 1;
-                }
+                app::widget_from_id::<Dial>("SPINNER").unwrap().do_callback();
             }
             if let Ok(text) = handler.join() {
                 self.target = text;
@@ -305,10 +358,17 @@ fn counter(tooltip: &str, value: f64, flex: &mut Flex) -> Counter {
 }
 
 fn dial(value: f64, flex: &mut Flex) {
-    let mut element = Dial::default();
+    let mut element = Dial::default().with_id("SPINNER");
     element.deactivate();
     element.set_maximum((DIAL / 4 * 3) as f64);
     element.set_value(value);
+    element.set_callback(move |dial| {
+        dial.set_value(if dial.value() == (DIAL - 1) as f64 {
+            dial.minimum()
+        } else {
+            dial.value() + 1f64
+        })
+    });
     flex.fixed(&element, HEIGHT);
 }
 

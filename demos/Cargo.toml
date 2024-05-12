@@ -3,7 +3,7 @@
 resolver = "2"
 members = [
     "cairo",
-    "rmp",
+    "flerrands",
 ]
 
 [profile.release]

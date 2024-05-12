@@ -62,13 +62,10 @@ impl Sandbox for Model {
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
         let mut header = Flex::default();
-        let method = crate::choice(self.method as i32, &mut header);
-        method.clone().on_event(move |_| Message::Method(method.value() as u8));
+        crate::choice(self.method as i32, &mut header).on_event(move |choice| Message::Method(choice.value() as u8));
         header.fixed(&Frame::default().with_label("https://"), WIDTH);
-        let url = crate::input(&self.url);
-        url.clone().on_event(move |_| Message::Url(url.value()));
-        let request = crate::button(&mut header);
-        request.clone().on_event(move |_| Message::Request);
+        crate::input(&self.url).on_event(move |input| Message::Url(input.value()));
+        crate::button(&mut header).on_event(move |_| Message::Request);
         header.end();
         crate::text(&self.responce);
         let mut footer = Flex::default();
