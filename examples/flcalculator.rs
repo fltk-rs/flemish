@@ -81,12 +81,14 @@ impl Sandbox for Model {
         row.end();
         let mut buttons = Flex::default_fill().column();
         for line in BUTTONS {
-            let row = Flex::default();
+            let mut row = Flex::default();
             for label in line {
                 crate::button(label, self.theme as usize)
                     .on_event(move |_| Message::Click(label.to_string()));
             }
             row.end();
+            row.set_pad(PAD);
+            row.set_margin(0);
         }
         buttons.end();
         page.end();

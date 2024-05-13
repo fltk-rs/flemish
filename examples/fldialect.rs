@@ -128,7 +128,6 @@ impl Sandbox for Model {
         Frame::default();
         let mut button = crate::button("Speak", "@#<", &mut header).with_type(ButtonType::Toggle);
         button.set(self.speak);
-        header.fixed(&button, 50);
         button
             .clone()
             .on_event(move |_| Message::Speak(button.value()));
@@ -201,7 +200,8 @@ impl Sandbox for Model {
 
         page.end();
         {
-            header.set_pad(PAD);
+            header.set_frame(FrameType::DownBox);
+            header.set_pad(0);
             hero.set_pad(0);
             hero.fixed(&handle, PAD);
             hero.handle(move |flex, event| {
@@ -220,7 +220,8 @@ impl Sandbox for Model {
                     false
                 }
             });
-            footer.set_pad(PAD);
+            footer.set_pad(0);
+            footer.set_frame(FrameType::DownBox);
             page.fixed(&header, HEIGHT);
             page.fixed(&footer, HEIGHT);
             page.set_margin(PAD);
@@ -356,7 +357,7 @@ fn counter(tooltip: &str, value: f64, flex: &mut Flex) -> Counter {
     element.set_range(14_f64, 22_f64);
     element.set_precision(0);
     element.set_value(value);
-    flex.fixed(&element, WIDTH - HEIGHT - PAD);
+    flex.fixed(&element, WIDTH - HEIGHT);
     element
 }
 
@@ -399,8 +400,8 @@ fn text(tooltip: &str, value: &str, font: u8, size: u8) -> TextEditor {
 }
 
 fn menu(flex: &mut Flex) {
-    let element = MenuButton::default().with_label("@#menu");
-    flex.fixed(&element, 50);
+    let element = MenuButton::default();
+    flex.fixed(&element, HEIGHT);
     element
         .on_item_event(
             "@#circle  T&ranslate",
@@ -523,7 +524,7 @@ const PATH: &str = "/.config";
 const DIAL: u8 = 120;
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
-const WIDTH: i32 = HEIGHT * 3;
+const WIDTH: i32 =  123;
 const U8: i32 = 255;
 const DEFAULT: [u8; 9] = [
     1,   // [0] window_width * U8 +
