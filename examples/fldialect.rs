@@ -18,7 +18,7 @@ use {
     std::{env, fs, path::Path, process::Command, thread},
 };
 
-pub fn main() {
+fn main() {
     if crate::once() {
         let mut app = Model::new();
         app.run(Settings {
@@ -51,7 +51,7 @@ struct Model {
 
 #[derive(Clone)]
 enum Message {
-    Switch(),
+    Switch,
     From(u8),
     To(u8),
     Speak(bool),
@@ -227,13 +227,14 @@ impl Sandbox for Model {
             page.set_pad(PAD);
             page.set_frame(FrameType::FlatBox);
             let mut window = page.window().unwrap();
+            window.set_xclass(NAME);
             window.set_label(&format!(
                 "Translate from {} to {} - {NAME}",
                 self.lang[self.from as usize], self.lang[self.to as usize]
             ));
             window.size_range(
                 DEFAULT[0] as i32 * U8 + DEFAULT[1] as i32,
-                DEFAULT[2] as i32 * U8 + DEFAULT[3] as i32,
+                DEFAULT[0] as i32 * U8 + DEFAULT[1] as i32,
                 0,
                 0,
             );
@@ -246,10 +247,10 @@ impl Sandbox for Model {
             Message::From(value) => self.from = value,
             Message::To(value) => self.to = value,
             Message::Source(value) => self.source = value,
-            Message::Switch() => {
+            Message::Switch => {
                 let temp = self.from;
-                self.to = self.from;
-                self.from = temp;
+                self.from = self.to;
+                self.to = temp;
             }
             Message::Font(value) => self.font = value,
             Message::Size(value) => self.size = value,

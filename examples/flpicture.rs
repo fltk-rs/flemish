@@ -80,15 +80,15 @@ impl Sandbox for Model {
         hero.end();
         page.end();
         {
-            header.set_pad(PAD);
-            header.set_margin(PAD);
-            hero.set_pad(PAD);
-            hero.set_margin(PAD);
+            header.set_pad(0);
+            header.set_margin(0);
+            header.set_frame(FrameType::DownBox);
+            hero.set_margin(0);
             hero.set_frame(FrameType::DownBox);
             page.set_frame(FrameType::FlatBox);
-            page.set_pad(0);
-            page.set_margin(0);
-            page.fixed(&header, HEIGHT + PAD * 2);
+            page.set_pad(PAD);
+            page.set_margin(PAD);
+            page.fixed(&header, HEIGHT);
         }
 
         let image = if self.list.is_empty() {
