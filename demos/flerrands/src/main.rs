@@ -7,7 +7,7 @@ use {
         color_themes,
         enums::{FrameType, Shortcut},
         frame::Frame,
-        group::Flex,
+        group::{Flex,Scroll},
         input::Input,
         menu::{MenuButton, MenuFlag},
         prelude::*,
@@ -53,6 +53,7 @@ enum Message {
     New(String),
     Delete(usize),
     Check(usize),
+    Change((usize, String)),
     Quit,
 }
 
@@ -89,7 +90,8 @@ impl Sandbox for Model {
         header.fixed(&add, HEIGHT);
         add.on_event(move |_| Message::New(description.value()));
         header.end();
-        let mut hero = Flex::default().column(); // HERO
+        let scroll = Scroll::default().with_size(324, 600);
+        let mut hero = Flex::default_fill().column(); // HERO
         for (idx, task) in self.tasks.iter().enumerate() {
             let mut row = Flex::default();
             let mut status = CheckButton::default();
@@ -102,19 +104,22 @@ impl Sandbox for Model {
                 true => description.deactivate(),
                 false => description.activate(),
             }
+            description.on_event(move |input| Message::Change((idx, input.value())));
             let delete = Button::default().with_label("@#1+");
             row.fixed(&delete, HEIGHT);
             delete.on_event(move |_| Message::Delete(idx));
             row.end();
-            row.set_frame(FrameType::DownBox);
+            row.set_pad(0);
             hero.fixed(&row, HEIGHT)
         }
         hero.end();
+        scroll.end();
         let footer = Flex::default();
         Frame::default().with_label(&format!("All tasks: {}", self.tasks.len()));
         footer.end(); // FOOTER
         page.end();
         {
+            page.set_frame(FrameType::FlatBox);
             page.set_pad(PAD);
             page.set_margin(PAD);
             page.fixed(&header, HEIGHT);
@@ -132,6 +137,7 @@ impl Sandbox for Model {
             Message::Delete(idx) => {
                 self.tasks.remove(idx);
             }
+            Message::Change((idx, value)) => self.tasks[idx].description = value,
             Message::Check(idx) => self.tasks[idx].status = !self.tasks[idx].status,
             Message::New(description) => self.tasks.push(Task {
                 status: false,
