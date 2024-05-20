@@ -79,18 +79,26 @@ impl Sandbox for Model {
         port.clone()
             .on_event(move |_| Message::Port(port.value().parse::<u32>().unwrap()));
         header.end();
-        header.set_frame(FrameType::DownFrame);
-        header.set_pad(PAD);
+        let mut hero = Flex::default();
         Frame::default().with_label(&self.status);
-        let footer = Flex::default();
+        hero.end();
+        let mut footer = Flex::default();
         Button::default()
             .with_label("Check")
             .on_event(move |_| Message::Check);
         footer.end();
-        page.set_frame(FrameType::FlatBox);
-        page.fixed(&header, HEIGHT);
-        page.fixed(&footer, HEIGHT);
         page.end();
+        {
+            header.set_frame(FrameType::DownFrame);
+            header.set_pad(0);
+            hero.set_frame(FrameType::DownFrame);
+            footer.set_frame(FrameType::DownFrame);
+            page.set_pad(PAD);
+            page.set_margin(PAD);
+            page.set_frame(FrameType::FlatBox);
+            page.fixed(&header, HEIGHT);
+            page.fixed(&footer, HEIGHT);
+        }
     }
 
     fn update(&mut self, message: Message) {

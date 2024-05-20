@@ -75,14 +75,21 @@ impl Sandbox for Model {
         crate::button("Next", "@#>|", &mut header).on_event(|_| Message::Next);
         crate::button("Remove", "@#1+", &mut header).on_event(|_| Message::Remove);
         header.end();
+        let mut hero = Flex::default_fill();
         let mut frame = crate::frame("Image").with_id("image-frame");
-
+        hero.end();
         page.end();
-        page.set_pad(PAD);
-        header.set_pad(PAD);
-        page.set_frame(FrameType::FlatBox);
-        page.set_margin(PAD);
-        page.fixed(&header, HEIGHT);
+        {
+            header.set_pad(0);
+            header.set_margin(0);
+            header.set_frame(FrameType::DownBox);
+            hero.set_margin(0);
+            hero.set_frame(FrameType::DownBox);
+            page.set_frame(FrameType::FlatBox);
+            page.set_pad(PAD);
+            page.set_margin(PAD);
+            page.fixed(&header, HEIGHT);
+        }
 
         let image = if self.list.is_empty() {
             None::<SharedImage>
