@@ -1,8 +1,7 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    app, button::CheckButton, color_themes, group::Flex, prelude::*,
-    OnEvent, Sandbox, Settings,
+    app, button::CheckButton, color_themes, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
 };
 
 pub fn main() {
@@ -43,7 +42,8 @@ impl Sandbox for Model {
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
         {
-            crate::check(self.default).on_event(move |check| Message::DefaultToggled(check.value()));
+            crate::check(self.default)
+                .on_event(move |check| Message::DefaultToggled(check.value()));
             crate::check(self.styled).on_event(move |check| Message::StyledToggled(check.value()));
             crate::check(self.custom).on_event(move |check| Message::CustomToggled(check.value()));
         }

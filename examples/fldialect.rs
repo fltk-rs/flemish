@@ -124,12 +124,12 @@ impl Sandbox for Model {
             Frame::default();
             crate::choice("From", &self.lang.join("|"), self.from, &mut header)
                 .on_event(move |choice| Message::From(choice.value() as u8));
-            crate::button("Switch", "@#refresh", &mut header)
-                .on_event(move |_| Message::Switch);
+            crate::button("Switch", "@#refresh", &mut header).on_event(move |_| Message::Switch);
             crate::choice("To", &self.lang.join("|"), self.to, &mut header)
                 .on_event(move |choice| Message::To(choice.value() as u8));
             Frame::default();
-            let mut button = crate::button("Speak", "@#<", &mut header).with_type(ButtonType::Toggle);
+            let mut button =
+                crate::button("Speak", "@#<", &mut header).with_type(ButtonType::Toggle);
             button.set(self.speak);
             button.on_event(move |button| Message::Speak(button.value()));
             header.end();
@@ -140,59 +140,57 @@ impl Sandbox for Model {
             let mut hero = Flex::default().column().with_id("HERO");
             crate::text("Source", &self.source, self.font, self.size)
                 .on_event(move |text| Message::Source(text.buffer().unwrap().text()));
-            Frame::default().with_id("Handle").handle(move |frame, event| {
-                let mut flex = app::widget_from_id::<Flex>("HERO").unwrap();
-                match event {
-                    Event::Push => true,
-                    Event::Drag => {
-                        let child = flex.child(0).unwrap();
-                        match flex.get_type() {
-                            FlexType::Column => {
-                                if (flex.y()..=flex.height() + flex.y() - frame.height())
-                                    .contains(&app::event_y())
-                                {
-                                    flex.fixed(&child, app::event_y() - flex.y());
-                                }
-                            }
-                            FlexType::Row => {
-                                if (flex.x()..=flex.width() + flex.x() - frame.width())
-                                    .contains(&app::event_x())
-                                {
-                                    flex.fixed(&child, app::event_x() - flex.x());
-                                }
-                            }
-                        }
-                        app::redraw();
-                        true
-                    }
-                    Event::Enter => {
-                        frame.window().unwrap().set_cursor(
+            Frame::default()
+                .with_id("Handle")
+                .handle(move |frame, event| {
+                    let mut flex = app::widget_from_id::<Flex>("HERO").unwrap();
+                    match event {
+                        Event::Push => true,
+                        Event::Drag => {
+                            let child = flex.child(0).unwrap();
                             match flex.get_type() {
+                                FlexType::Column => {
+                                    if (flex.y()..=flex.height() + flex.y() - frame.height())
+                                        .contains(&app::event_y())
+                                    {
+                                        flex.fixed(&child, app::event_y() - flex.y());
+                                    }
+                                }
+                                FlexType::Row => {
+                                    if (flex.x()..=flex.width() + flex.x() - frame.width())
+                                        .contains(&app::event_x())
+                                    {
+                                        flex.fixed(&child, app::event_x() - flex.x());
+                                    }
+                                }
+                            }
+                            app::redraw();
+                            true
+                        }
+                        Event::Enter => {
+                            frame.window().unwrap().set_cursor(match flex.get_type() {
                                 FlexType::Column => Cursor::NS,
                                 FlexType::Row => Cursor::WE,
-                            }
-                        );
-                        true
+                            });
+                            true
+                        }
+                        Event::Leave => {
+                            frame.window().unwrap().set_cursor(Cursor::Arrow);
+                            true
+                        }
+                        _ => false,
                     }
-                    Event::Leave => {
-                        frame.window().unwrap().set_cursor(Cursor::Arrow);
-                        true
-                    }
-                    _ => false,
-                }
-            });
+                });
             crate::text("Target", &self.target, self.font, self.size);
             hero.end();
             hero.set_pad(0);
             hero.fixed(&hero.child(1).unwrap(), PAD);
             hero.handle(move |flex, event| {
                 if event == Event::Resize {
-                    flex.set_type(
-                        match flex.width() < flex.height() {
-                            true => FlexType::Column,
-                            false => FlexType::Row,
-                        }
-                    );
+                    flex.set_type(match flex.width() < flex.height() {
+                        true => FlexType::Column,
+                        false => FlexType::Row,
+                    });
                     flex.fixed(&flex.child(0).unwrap(), 0);
                     flex.fixed(&flex.child(1).unwrap(), PAD);
                     true
@@ -207,12 +205,15 @@ impl Sandbox for Model {
             Frame::default();
             crate::choice("Font", &app::fonts().join("|"), self.font, &mut footer)
                 .on_event(move |choice| Message::Font(choice.value() as u8));
-            crate::button("Translate", "@#circle", &mut footer).on_event(move |_| Message::Translate);
-            crate::counter("Size", self.size as f64, &mut footer).with_type(CounterType::Simple)
+            crate::button("Translate", "@#circle", &mut footer)
+                .on_event(move |_| Message::Translate);
+            crate::counter("Size", self.size as f64, &mut footer)
+                .with_type(CounterType::Simple)
                 .on_event(move |counter| Message::Size(counter.value() as u8));
             footer.fixed(&crate::dial(self.spinner as f64), HEIGHT);
             Frame::default();
-            crate::button("Save as...", "@#filesaveas", &mut footer).on_event(move |_| Message::Save);
+            crate::button("Save as...", "@#filesaveas", &mut footer)
+                .on_event(move |_| Message::Save);
             footer.end();
             footer.set_pad(0);
             page.fixed(&footer, HEIGHT);
@@ -394,7 +395,8 @@ fn text(tooltip: &str, value: &str, font: u8, size: u8) -> TextEditor {
 
 fn menu() -> MenuButton {
     let element = MenuButton::default();
-    element.clone()
+    element
+        .clone()
         .on_item_event(
             "@#circle  T&ranslate",
             Shortcut::Ctrl | 'r',
@@ -516,7 +518,7 @@ const NAME: &str = "FlDialect";
 const PATH: &str = "/.config";
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
-const WIDTH: i32 =  125;
+const WIDTH: i32 = 125;
 const U8: i32 = 255;
 const DEFAULT: [u8; 9] = [
     1,   // [0] window_width * U8 +

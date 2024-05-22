@@ -37,7 +37,7 @@ impl Sandbox for Counter {
     }
 
     fn title(&self) -> String {
-        String::from("Counter - fltk-rs")
+        format!("Counter -{}- fltk-rs", self.value)
     }
 
     fn update(&mut self, message: Message) {

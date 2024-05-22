@@ -1,7 +1,11 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    app, misc::Progress, valuator::{Slider, SliderType}, color_themes, group::Flex, prelude::*,
+    app, color_themes,
+    group::Flex,
+    misc::Progress,
+    prelude::*,
+    valuator::{Slider, SliderType},
     OnEvent, Sandbox, Settings,
 };
 
@@ -18,7 +22,6 @@ pub fn main() {
 
 const PAD: i32 = 10;
 
-
 #[derive(Clone)]
 enum Message {
     SliderChanged(f64),
@@ -30,16 +33,18 @@ struct Model {
 
 impl Sandbox for Model {
     fn new() -> Self {
-        Self {
-            value: 0f64,
-        }
+        Self { value: 0f64 }
     }
 
     fn view(&mut self) {
-        let mut page = Flex::default_fill().column().with_size(600, 150).center_of_parent();
+        let mut page = Flex::default_fill()
+            .column()
+            .with_size(600, 150)
+            .center_of_parent();
         {
             crate::progress(self.value);
-            crate::slider(self.value).on_event(move |slider| Message::SliderChanged(slider.value()));
+            crate::slider(self.value)
+                .on_event(move |slider| Message::SliderChanged(slider.value()));
         }
         page.end();
         page.set_margin(PAD);

@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    app, frame::Frame, misc::InputChoice, color_themes, group::Flex, prelude::*,
-    OnEvent, Sandbox, Settings,
+    app, color_themes, frame::Frame, group::Flex, misc::InputChoice, prelude::*, OnEvent, Sandbox,
+    Settings,
 };
 
 pub fn main() {
@@ -17,7 +17,6 @@ pub fn main() {
 }
 
 const PAD: i32 = 10;
-
 
 #[derive(Clone)]
 enum Message {
@@ -63,7 +62,7 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        String::from("InputChoice - Flemish")
+        format!("InputChoice -{}- Flemish", self.language)
     }
 }
 
@@ -105,7 +104,7 @@ fn input(value: &str) {
                 choice.add(lang);
             }
         }
-        });
+    });
     element.input().do_callback();
     element.set_value_index(0);
     element.on_event(move |choice| Message::Selected(choice.value().unwrap()));

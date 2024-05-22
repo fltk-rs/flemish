@@ -31,7 +31,7 @@ impl Sandbox for State {
     }
 
     fn title(&self) -> String {
-        String::from("State - fltk-rs")
+        format!("Input - {} - fltk-rs", self.text)
     }
 
     fn update(&mut self, message: Message) {
