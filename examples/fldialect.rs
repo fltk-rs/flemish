@@ -23,6 +23,12 @@ fn main() {
         let mut app = Model::new();
         app.run(Settings {
             size: (app.width, app.height),
+            size_range: Some((
+                DEFAULT[0] as i32 * U8 + DEFAULT[1] as i32,
+                DEFAULT[2] as i32 * U8 + DEFAULT[3] as i32,
+                0,
+                0,
+            )),
             pos: (app.vertical, app.horizontal),
             ignore_esc_close: true,
             resizable: true,
