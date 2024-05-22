@@ -36,7 +36,7 @@ impl Sandbox for Model {
     }
 
     fn view(&mut self) {
-        let mut page = Flex::default_fill().column();
+        let mut page = Flex::default_fill().column().with_size(600, 150).center_of_parent();
         {
             crate::progress(self.value);
             crate::slider(self.value).on_event(move |slider| Message::SliderChanged(slider.value()));
