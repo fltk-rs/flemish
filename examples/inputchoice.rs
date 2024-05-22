@@ -63,7 +63,7 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        String::from("CheckButton - Flemish")
+        String::from("InputChoice - Flemish")
     }
 }
 
