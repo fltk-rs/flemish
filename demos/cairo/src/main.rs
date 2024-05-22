@@ -16,6 +16,18 @@ use {
     },
 };
 
+const PAD: i32 = 10;
+const HEIGHT: i32 = 3 * PAD;
+const WIDTH: i32 = 3 * HEIGHT;
+const NAME: &str = "FlCairo";
+
+#[derive(Clone, Copy)]
+enum Message {
+    Inc,
+    Dec,
+    Quit,
+}
+
 pub fn main() {
     Counter::new().run(Settings {
         size: (640, 360),
@@ -27,23 +39,15 @@ pub fn main() {
     })
 }
 
-#[derive(Default)]
 struct Counter {
     value: u8,
-}
-
-#[derive(Debug, Clone, Copy)]
-enum Message {
-    Inc,
-    Dec,
-    Quit,
 }
 
 impl Sandbox for Counter {
     type Message = Message;
 
     fn title(&self) -> String {
-        String::from("Cairo Buttons")
+        format!("{} - {}", self.value, crate::NAME)
     }
 
     fn new() -> Self {
@@ -52,43 +56,25 @@ impl Sandbox for Counter {
 
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
-        let mut header = Flex::default();
-        let menu = MenuButton::default()
-            .with_label("@#menu")
-            .on_item_event(
-                "Command/Increment",
-                Shortcut::None,
-                MenuFlag::Normal,
-                |_| Message::Inc,
-            )
-            .on_item_event(
-                "Command/Decrement",
-                Shortcut::None,
-                MenuFlag::Normal,
-                |_| Message::Dec,
-            )
-            .on_item_event(
-                "Quit",
-                Shortcut::Ctrl | 'q',
-                MenuFlag::Normal,
-                |_| Message::Quit,
-            );
+
+        let mut header = Flex::default(); //HEADER
+        header.fixed(&crate::menu(), WIDTH);
         header.end();
-        header.fixed(&menu, 50);
-        page.set_pad(10);
-        page.set_margin(10);
-        page.fixed(&header, 30);
-        let hero = Flex::default();
+
+        let hero = Flex::default(); //HERO
         crate::cairobutton()
             .with_label("@#<")
-            .on_event(|_| Message::Dec);
-        let mut frame = Frame::default().with_label(&self.value.to_string());
-        frame.set_label_size(60);
+            .on_event(move |_| Message::Dec);
+        crate::frame(&self.value.to_string());
         crate::cairobutton()
             .with_label("@#>")
-            .on_event(|_| Message::Inc);
+            .on_event(move |_| Message::Inc);
         hero.end();
+
         page.end();
+        page.set_pad(PAD);
+        page.set_margin(PAD);
+        page.fixed(&header, HEIGHT);
     }
 
     fn update(&mut self, message: Message) {
@@ -104,6 +90,31 @@ impl Sandbox for Counter {
             }
         }
     }
+}
+
+fn menu() -> MenuButton {
+    MenuButton::default()
+        .with_label("@#menu")
+        .on_item_event(
+            "Command/Increment",
+            Shortcut::None,
+            MenuFlag::Normal,
+            move |_| Message::Inc,
+        )
+        .on_item_event(
+            "Command/Decrement",
+            Shortcut::None,
+            MenuFlag::Normal,
+            move |_| Message::Dec,
+        )
+        .on_item_event("Quit", Shortcut::Ctrl | 'q', MenuFlag::Normal, move |_| {
+            Message::Quit
+        })
+}
+
+fn frame(value: &str) {
+    let mut element = Frame::default().with_label(value);
+    element.set_label_size(60);
 }
 
 fn cairobutton() -> Button {
