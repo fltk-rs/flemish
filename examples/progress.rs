@@ -57,15 +57,17 @@ impl Sandbox for Model {
     }
 }
 
+const MAX: f64 = 100f64;
+
 fn progress(value: f64) {
     let mut element = Progress::default();
-    element.set_maximum(100f64);
+    element.set_maximum(MAX);
     element.set_value(value);
 }
 
 fn slider(value: f64) -> Slider {
     let mut element = Slider::default().with_type(SliderType::Horizontal);
-    element.set_maximum(100f64);
+    element.set_maximum(MAX);
     element.set_precision(0);
     element.set_value(value);
     element
