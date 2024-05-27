@@ -137,7 +137,7 @@ impl Sandbox for Model {
             page.fixed(&header, HEIGHT);
         }
         {
-            let mut hero = Flex::default().column().with_id("HERO");
+            let mut hero = Flex::default_fill().column().with_id("HERO");
             crate::text("Source", &self.source, self.font, self.size)
                 .on_event(move |text| Message::Source(text.buffer().unwrap().text()));
             Frame::default()
