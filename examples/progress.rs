@@ -24,7 +24,7 @@ const PAD: i32 = 10;
 
 #[derive(Clone)]
 enum Message {
-    SliderChanged(f64),
+    Slider(f64),
 }
 
 struct Model {
@@ -32,6 +32,12 @@ struct Model {
 }
 
 impl Sandbox for Model {
+    type Message = Message;
+
+    fn title(&self) -> String {
+        String::from("Progress - Flemish")
+    }
+
     fn new() -> Self {
         Self { value: 0f64 }
     }
@@ -39,27 +45,23 @@ impl Sandbox for Model {
     fn view(&mut self) {
         let mut page = Flex::default_fill()
             .column()
-            .with_size(600, 150)
+            .with_size(560, 70)
             .center_of_parent();
         {
             crate::progress(self.value);
             crate::slider(self.value)
-                .on_event(move |slider| Message::SliderChanged(slider.value()));
+                .on_event(move |slider| Message::Slider(slider.value()));
         }
         page.end();
-        page.set_margin(PAD);
+        page.set_pad(PAD);
     }
 
-    type Message = Message;
     fn update(&mut self, message: Message) {
         match message {
             Message::SliderChanged(value) => self.value = value,
         }
     }
 
-    fn title(&self) -> String {
-        String::from("Progress - Flemish")
-    }
 }
 
 const MAX: f64 = 100f64;

@@ -74,12 +74,22 @@ impl Sandbox for Counter {
 
 To run the [examples:](/examples)
 ```bash
+cargo run --example counter
+cargo run --example temperature
 cargo run --example flcalculator
 cargo run --example fldialect
 cargo run --example flnetport
 cargo run --example flpicture
 ...
 ```
+
+### [FlCounter](/examples/counter.rs)
+
+![FlCalculator](/assets/counter.png)
+
+### [FlTemperature](/examples/temperature.rs)
+
+![FlTemperature](/assets/temperature.png)
 
 ### [FlCalculator](/examples/flcalculator.rs)
 
@@ -91,7 +101,7 @@ cargo run --example flpicture
 
 ### [FlNetPort](/examples/flnetport.rs)
 
-![FlNetPort](/assets/flnetport.gif)
+![FlNetPort](/assets/flnetport.png)
 
 ### [FlPicture](/examples/flpicture.rs)
 

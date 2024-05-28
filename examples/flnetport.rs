@@ -32,18 +32,18 @@ pub fn main() {
     })
 }
 
-#[derive(Clone)]
-struct Model {
-    status: String,
-    address: [u8; 4],
-    port: u32,
-}
-
 #[derive(Clone, Copy)]
 enum Message {
     Octet(usize, u8),
     Port(u32),
     Check,
+}
+
+#[derive(Clone)]
+struct Model {
+    status: String,
+    address: [u8; 4],
+    port: u32,
 }
 
 impl Sandbox for Model {
@@ -58,7 +58,7 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        String::from("FlNetPort")
+        format!("[{}] {:?}:{} - FlNetPort", self.status, self.address, self.port)
     }
 
     fn view(&mut self) {
@@ -67,20 +67,12 @@ impl Sandbox for Model {
             let mut header = Flex::default();
             header.fixed(&Frame::default().with_label("IP address:"), WIDTH);
             for idx in 0..4 {
-                header.fixed(
-                    &crate::counter(self.address[idx] as f64)
-                        .clone()
-                        .on_event(move |octet| Message::Octet(idx, octet.value() as u8)),
-                    WIDTH,
-                );
+                crate::counter(self.address[idx] as f64, &mut header)
+                    .on_event(move |octet| Message::Octet(idx, octet.value() as u8));
             }
             Frame::default();
-            header.fixed(
-                &crate::input(&self.port.to_string())
-                    .clone()
-                    .on_event(move |input| Message::Port(input.value().parse::<u32>().unwrap())),
-                WIDTH,
-            );
+            crate::input(&self.port.to_string(), &mut header).with_label("Port:")
+                .on_event(move |input| Message::Port(input.value().parse::<u32>().unwrap()));
             header.fixed(
                 &Button::default()
                     .with_label("@#->")
@@ -144,19 +136,20 @@ impl Sandbox for Model {
     }
 }
 
-fn counter(value: f64) -> Counter {
+fn counter(value: f64, flex: &mut Flex) -> Counter {
     let mut element = Counter::default().with_type(CounterType::Simple);
     element.set_maximum(254_f64);
     element.set_precision(0);
     element.set_value(value);
+    flex.fixed(&element, WIDTH);
     element
 }
 
-fn input(value: &str) -> Input {
+fn input(value: &str, flex: &mut Flex) -> Input {
     let mut element = Input::default()
-        .with_type(InputType::Int)
-        .with_label("Port:");
+        .with_type(InputType::Int);
     element.set_value(value);
+    flex.fixed(&element, WIDTH);
     element
 }
 

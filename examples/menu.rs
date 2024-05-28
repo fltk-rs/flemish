@@ -9,8 +9,8 @@ use flemish::{
 };
 
 pub fn main() {
-    MenuApp::new().run(Settings {
-        size: (300, 300),
+    Model::new().run(Settings {
+        size: (640, 360),
         resizable: true,
         ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
@@ -20,7 +20,7 @@ pub fn main() {
 }
 
 #[derive(Default)]
-struct MenuApp {
+struct Model {
     value: i32,
 }
 
@@ -30,7 +30,7 @@ enum Message {
     DecrementPressed,
 }
 
-impl Sandbox for MenuApp {
+impl Sandbox for Model {
     type Message = Message;
 
     fn new() -> Self {

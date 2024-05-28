@@ -1,175 +1,188 @@
 #![forbid(unsafe_code)]
 
+mod model;
+
 use {
     cairo::{Context, Format, ImageSurface},
     flemish::{
         app,
         button::Button,
         color_themes, draw,
+        enums::Event,
         enums::{Align, Color, ColorDepth, Font, Shortcut},
         frame::Frame,
         group::Flex,
         image::RgbImage,
-        menu::{MenuButton, MenuFlag},
+        menu::{MenuButton, MenuButtonType, MenuFlag},
         prelude::*,
         OnEvent, OnMenuEvent, Sandbox, Settings,
     },
+    model::Model,
 };
 
-const PAD: i32 = 10;
-const HEIGHT: i32 = 3 * PAD;
-const WIDTH: i32 = 3 * HEIGHT;
-const NAME: &str = "FlCairo";
-
 #[derive(Clone, Copy)]
-enum Message {
+pub enum Message {
     Inc,
     Dec,
     Quit,
 }
 
-pub fn main() {
-    Counter::new().run(Settings {
+fn main() {
+    Model::new().run(Settings {
         size: (640, 360),
         ignore_esc_close: true,
-        background: Some(Color::White),
+        resizable: false,
+        background: Some(Color::from_u32(0xfdf6e3)),
         color_map: Some(color_themes::TAN_THEME),
-        scheme: Some(app::Scheme::Plastic),
+        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }
 
-struct Counter {
-    value: u8,
-}
-
-impl Sandbox for Counter {
+impl Sandbox for Model {
     type Message = Message;
 
-    fn title(&self) -> String {
-        format!("{} - {}", self.value, crate::NAME)
+    fn new() -> Self {
+        Self::default()
     }
 
-    fn new() -> Self {
-        Self { value: 0u8 }
+    fn title(&self) -> String {
+        format!("{} - FlCairo", self.value())
     }
 
     fn view(&mut self) {
-        let mut page = Flex::default_fill().column();
-
-        let mut header = Flex::default(); //HEADER
-        header.fixed(&crate::menu(), WIDTH);
-        header.end();
+        let mut page = Flex::default()
+            .with_size(600, 200)
+            .center_of_parent()
+            .column();
 
         let hero = Flex::default(); //HERO
         crate::cairobutton()
             .with_label("@#<")
             .on_event(move |_| Message::Dec);
-        crate::frame(&self.value.to_string());
+        crate::frame(&self.value()).handle(crate::popup);
         crate::cairobutton()
             .with_label("@#>")
             .on_event(move |_| Message::Inc);
         hero.end();
 
         page.end();
-        page.set_pad(PAD);
-        page.set_margin(PAD);
-        page.fixed(&header, HEIGHT);
+        page.set_pad(0);
+        page.set_margin(0);
     }
 
     fn update(&mut self, message: Message) {
         match message {
-            Message::Inc => {
-                self.value = self.value.saturating_add(1);
-            }
-            Message::Dec => {
-                self.value = self.value.saturating_sub(1);
-            }
-            Message::Quit => {
-                app::quit();
-            }
+            Message::Inc => self.inc(),
+            Message::Dec => self.dec(),
+            Message::Quit => app::quit(),
         }
     }
 }
 
 fn menu() -> MenuButton {
     MenuButton::default()
+        .with_type(MenuButtonType::Popup3)
         .with_label("@#menu")
         .on_item_event(
-            "Command/Increment",
-            Shortcut::None,
+            "@#+  &Increment",
+            Shortcut::Ctrl | 'i',
             MenuFlag::Normal,
             move |_| Message::Inc,
         )
         .on_item_event(
-            "Command/Decrement",
-            Shortcut::None,
+            "@#-  &Decrement",
+            Shortcut::Ctrl | 'd',
             MenuFlag::Normal,
             move |_| Message::Dec,
         )
-        .on_item_event("Quit", Shortcut::Ctrl | 'q', MenuFlag::Normal, move |_| {
-            Message::Quit
-        })
+        .on_item_event(
+            "@#1+  Quit",
+            Shortcut::Ctrl | 'q',
+            MenuFlag::Normal,
+            move |_| Message::Quit,
+        )
 }
 
-fn frame(value: &str) {
+fn popup(_: &mut Frame, event: Event) -> bool {
+    match event {
+        Event::Push => match app::event_mouse_button() {
+            app::MouseButton::Right => {
+                crate::menu().popup();
+                true
+            }
+            _ => false,
+        },
+        _ => false,
+    }
+}
+
+fn frame(value: &str) -> Frame {
     let mut element = Frame::default().with_label(value);
     element.set_label_size(60);
+    element
 }
 
 fn cairobutton() -> Button {
     let mut element = Button::default();
     element.super_draw(false);
-    element.draw(|w| {
-        draw::draw_rect_fill(w.x(), w.y(), w.w(), w.h(), Color::White);
-        let mut surface =
-            ImageSurface::create(Format::ARgb32, w.w(), w.h()).expect("Couldn’t create surface");
-        crate::draw_surface(&mut surface, w.w(), w.h());
-        if !w.value() {
+    element.draw(|button| {
+        draw::draw_rect_fill(
+            button.x(),
+            button.y(),
+            button.w(),
+            button.h(),
+            Color::from_u32(0xfdf6e3),
+        );
+        let mut surface = ImageSurface::create(Format::ARgb32, button.w(), button.h())
+            .expect("Couldn’t create surface");
+        crate::draw_surface(&mut surface, button.w(), button.h());
+        if !button.value() {
             cairo_blur::blur_image_surface(&mut surface, 20);
         }
         surface
-            .with_data(|s| {
-                let mut img = RgbImage::new(s, w.w(), w.h(), ColorDepth::Rgba8).unwrap();
-                img.draw(w.x(), w.y(), w.w(), w.h());
+            .with_data(|surface| {
+                RgbImage::new(surface, button.w(), button.h(), ColorDepth::Rgba8)
+                    .unwrap()
+                    .draw(button.x(), button.y(), button.w(), button.h());
             })
             .unwrap();
         draw::set_draw_color(Color::Black);
         draw::set_font(Font::Helvetica, app::font_size());
-        if !w.value() {
+        if !button.value() {
             draw::draw_rbox(
-                w.x() + 1,
-                w.y() + 1,
-                w.w() - 6,
-                w.h() - 6,
+                button.x() + 1,
+                button.y() + 1,
+                button.w() - 6,
+                button.h() - 6,
                 15,
                 true,
                 Color::White,
             );
             draw::draw_text2(
-                &w.label(),
-                w.x() + 1,
-                w.y() + 1,
-                w.w() - 6,
-                w.h() - 6,
+                &button.label(),
+                button.x() + 1,
+                button.y() + 1,
+                button.w() - 6,
+                button.h() - 6,
                 Align::Center,
             );
         } else {
             draw::draw_rbox(
-                w.x() + 1,
-                w.y() + 1,
-                w.w() - 4,
-                w.h() - 4,
+                button.x() + 1,
+                button.y() + 1,
+                button.w() - 4,
+                button.h() - 4,
                 15,
                 true,
                 Color::White,
             );
             draw::draw_text2(
-                &w.label(),
-                w.x() + 1,
-                w.y() + 1,
-                w.w() - 4,
-                w.h() - 4,
+                &button.label(),
+                button.x() + 1,
+                button.y() + 1,
+                button.w() - 4,
+                button.h() - 4,
                 Align::Center,
             );
         }

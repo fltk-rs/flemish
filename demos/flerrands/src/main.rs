@@ -7,7 +7,7 @@ use {
         color_themes,
         enums::{FrameType, Shortcut},
         frame::Frame,
-        group::{Flex,Scroll,ScrollType},
+        group::{Flex, Scroll, ScrollType},
         input::Input,
         menu::{MenuButton, MenuFlag},
         prelude::*,
@@ -36,6 +36,15 @@ const HEIGHT: i32 = PAD * 3;
 const WINDOW_WIDTH: i32 = 360;
 const WINDOW_HEIGHT: i32 = 640;
 
+#[derive(Clone)]
+enum Message {
+    New(String),
+    Delete(usize),
+    Check(usize),
+    Change((usize, String)),
+    Quit,
+}
+
 #[derive(Deserialize, Serialize)]
 struct Task {
     status: bool,
@@ -46,15 +55,6 @@ struct Task {
 struct Model {
     size: (i32, i32),
     tasks: Vec<Task>,
-}
-
-#[derive(Clone)]
-enum Message {
-    New(String),
-    Delete(usize),
-    Check(usize),
-    Change((usize, String)),
-    Quit,
 }
 
 impl Sandbox for Model {
@@ -86,9 +86,17 @@ impl Sandbox for Model {
         let mut header = Flex::default(); // HEADER
         header.fixed(&crate::menu(), 50);
         let description = Input::default();
-        header.fixed(&Button::default().with_label("@#+").clone().on_event(move |_| Message::New(description.value())), HEIGHT);
+        header.fixed(
+            &Button::default()
+                .with_label("@#+")
+                .clone()
+                .on_event(move |_| Message::New(description.value())),
+            HEIGHT,
+        );
         header.end();
-        let scroll = Scroll::default().with_size(324, 600).with_type(ScrollType::Vertical);
+        let scroll = Scroll::default()
+            .with_size(324, 600)
+            .with_type(ScrollType::Vertical);
         let mut hero = Flex::default_fill().column(); // HERO
         for (idx, task) in self.tasks.iter().enumerate() {
             let mut row = Flex::default();

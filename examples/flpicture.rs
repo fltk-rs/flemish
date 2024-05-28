@@ -19,7 +19,7 @@ use std::fs;
 pub fn main() {
     Model::new().run(Settings {
         size: (640, 480),
-        resizable: true,
+        resizable: false,
         ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
         scheme: Some(app::Scheme::Base),
@@ -67,30 +67,30 @@ impl Sandbox for Model {
 
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
-        let mut header = Flex::default();
-        crate::menu(&mut header);
-        crate::button("Open", "@#fileopen", &mut header).on_event(|_| Message::Open);
-        crate::button("Prev", "@#|<", &mut header).on_event(|_| Message::Prev);
-        let mut size = crate::slider("Size").with_type(SliderType::Horizontal);
-        crate::button("Next", "@#>|", &mut header).on_event(|_| Message::Next);
-        crate::button("Remove", "@#1+", &mut header).on_event(|_| Message::Remove);
-        header.end();
-        let mut hero = Flex::default_fill();
-        let mut frame = crate::frame("Image").with_id("image-frame");
-        hero.end();
-        page.end();
         {
+            let mut header = Flex::default();
+            crate::menu(&mut header);
+            crate::button("Open", "@#fileopen", &mut header).on_event(|_| Message::Open);
+            crate::button("Prev", "@#|<", &mut header).on_event(|_| Message::Prev);
+            let mut size = crate::slider("Size").with_type(SliderType::Horizontal);
+            crate::button("Next", "@#>|", &mut header).on_event(|_| Message::Next);
+            crate::button("Remove", "@#1+", &mut header).on_event(|_| Message::Remove);
+            header.end();
             header.set_pad(0);
             header.set_margin(0);
-            header.set_frame(FrameType::DownBox);
-            hero.set_margin(0);
-            hero.set_frame(FrameType::DownBox);
-            page.set_frame(FrameType::FlatBox);
-            page.set_pad(PAD);
-            page.set_margin(PAD);
             page.fixed(&header, HEIGHT);
         }
-
+        {
+            let mut hero = Flex::default_fill();
+            let mut frame = crate::frame("Image").with_id("image-frame");
+            hero.end();
+            hero.set_margin(0);
+            hero.set_frame(FrameType::DownBox);
+        }
+        page.end();
+        page.set_pad(PAD);
+        page.set_margin(PAD);
+        page.set_frame(FrameType::FlatBox);
         let image = if self.list.is_empty() {
             None::<SharedImage>
         } else {

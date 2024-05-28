@@ -6,9 +6,9 @@ use {
         button::{Button, ButtonType},
         color_themes,
         dialog::{alert_default, FileChooser, FileChooserType, HelpDialog},
-        enums::{Color, Cursor, Event, Font, FrameType, Shortcut},
+        enums::{Color, Font, FrameType, Shortcut},
         frame::Frame,
-        group::{Flex, FlexType},
+        group::Flex,
         menu::{Choice, MenuButton, MenuFlag},
         prelude::*,
         text::{TextBuffer, TextEditor, WrapMode},
@@ -20,18 +20,13 @@ use {
 
 fn main() {
     if crate::once() {
+        app::GlobalState::<String>::new(env::var("HOME").unwrap() + PATH + NAME);
         let mut app = Model::new();
         app.run(Settings {
             size: (app.width, app.height),
-            size_range: Some((
-                DEFAULT[0] as i32 * U8 + DEFAULT[1] as i32,
-                DEFAULT[2] as i32 * U8 + DEFAULT[3] as i32,
-                0,
-                0,
-            )),
             pos: (app.vertical, app.horizontal),
             ignore_esc_close: true,
-            resizable: true,
+            resizable: false,
             color_map: Some(color_themes::DARK_THEME),
             scheme: Some(app::Scheme::Base),
             ..Default::default()
@@ -49,7 +44,6 @@ struct Model {
     speak: bool,
     font: u8,
     size: u8,
-    spinner: u8,
     source: String,
     target: String,
     lang: Vec<String>,
@@ -79,7 +73,7 @@ impl Sandbox for Model {
     }
 
     fn new() -> Self {
-        let file = env::var("HOME").unwrap() + PATH + NAME;
+        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
         let params: Vec<u8> = if Path::new(&file).exists() {
             if let Ok(value) = fs::read(&file) {
                 if value.len() == DEFAULT.len() {
@@ -106,9 +100,8 @@ impl Sandbox for Model {
             to: params[5],
             font: params[6],
             size: params[7],
-            vertical: ((w + width as f64) / 4_f64) as i32,
-            horizontal: ((h + height as f64) / 4_f64) as i32,
-            spinner: 0,
+            vertical: ((w - width as f64) / 2_f64) as i32,
+            horizontal: ((h - height as f64) / 2_f64) as i32,
             speak: false,
             source: String::new(),
             target: String::new(),
@@ -120,7 +113,7 @@ impl Sandbox for Model {
         let mut page = Flex::default_fill().column();
         {
             let mut header = Flex::default();
-            header.fixed(&crate::menu(), HEIGHT);
+            crate::menu(&mut header);
             Frame::default();
             crate::choice("From", &self.lang.join("|"), self.from, &mut header)
                 .on_event(move |choice| Message::From(choice.value() as u8));
@@ -140,64 +133,11 @@ impl Sandbox for Model {
             let mut hero = Flex::default_fill().column().with_id("HERO");
             crate::text("Source", &self.source, self.font, self.size)
                 .on_event(move |text| Message::Source(text.buffer().unwrap().text()));
-            Frame::default()
-                .with_id("Handle")
-                .handle(move |frame, event| {
-                    let mut flex = app::widget_from_id::<Flex>("HERO").unwrap();
-                    match event {
-                        Event::Push => true,
-                        Event::Drag => {
-                            let child = flex.child(0).unwrap();
-                            match flex.get_type() {
-                                FlexType::Column => {
-                                    if (flex.y()..=flex.height() + flex.y() - frame.height())
-                                        .contains(&app::event_y())
-                                    {
-                                        flex.fixed(&child, app::event_y() - flex.y());
-                                    }
-                                }
-                                FlexType::Row => {
-                                    if (flex.x()..=flex.width() + flex.x() - frame.width())
-                                        .contains(&app::event_x())
-                                    {
-                                        flex.fixed(&child, app::event_x() - flex.x());
-                                    }
-                                }
-                            }
-                            app::redraw();
-                            true
-                        }
-                        Event::Enter => {
-                            frame.window().unwrap().set_cursor(match flex.get_type() {
-                                FlexType::Column => Cursor::NS,
-                                FlexType::Row => Cursor::WE,
-                            });
-                            true
-                        }
-                        Event::Leave => {
-                            frame.window().unwrap().set_cursor(Cursor::Arrow);
-                            true
-                        }
-                        _ => false,
-                    }
-                });
+            hero.fixed(&Frame::default(), PAD);
             crate::text("Target", &self.target, self.font, self.size);
             hero.end();
             hero.set_pad(0);
             hero.fixed(&hero.child(1).unwrap(), PAD);
-            hero.handle(move |flex, event| {
-                if event == Event::Resize {
-                    flex.set_type(match flex.width() < flex.height() {
-                        true => FlexType::Column,
-                        false => FlexType::Row,
-                    });
-                    flex.fixed(&flex.child(0).unwrap(), 0);
-                    flex.fixed(&flex.child(1).unwrap(), PAD);
-                    true
-                } else {
-                    false
-                }
-            });
         }
         {
             let mut footer = Flex::default(); //FOOTER
@@ -210,7 +150,7 @@ impl Sandbox for Model {
             crate::counter("Size", self.size as f64, &mut footer)
                 .with_type(CounterType::Simple)
                 .on_event(move |counter| Message::Size(counter.value() as u8));
-            footer.fixed(&crate::dial(self.spinner as f64), HEIGHT);
+            crate::dial(&mut footer);
             Frame::default();
             crate::button("Save as...", "@#filesaveas", &mut footer)
                 .on_event(move |_| Message::Save);
@@ -316,19 +256,19 @@ impl Model {
         button.activate();
     }
     fn quit(&self) {
-        let file = env::var("HOME").unwrap() + PATH + NAME;
+        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
         let window = app::first_window().unwrap();
         fs::write(
             file,
             [
-                (window.width() / U8) as u8,
-                (window.width() % U8) as u8,
-                (window.height() / U8) as u8,
-                (window.height() % U8) as u8,
-                self.from,
-                self.to,
-                self.font,
-                self.size,
+                (window.width() / U8) as u8, //[0]
+                (window.width() % U8) as u8, //[1]
+                (window.height() / U8) as u8,//[2]
+                (window.height() % U8) as u8,//[3]
+                self.from, //[4]
+                self.to, //[5]
+                self.font, //[6]
+                self.size, //[7]
             ],
         )
         .unwrap();
@@ -354,12 +294,12 @@ fn counter(tooltip: &str, value: f64, flex: &mut Flex) -> Counter {
     element
 }
 
-fn dial(value: f64) -> Dial {
+fn dial(flex: &mut Flex) {
     const DIAL: u8 = 120;
     let mut element = Dial::default().with_id("SPINNER");
     element.deactivate();
     element.set_maximum((DIAL / 4 * 3) as f64);
-    element.set_value(value);
+    element.set_value(element.minimum());
     element.set_callback(move |dial| {
         dial.set_value(if dial.value() == (DIAL - 1) as f64 {
             dial.minimum()
@@ -367,7 +307,7 @@ fn dial(value: f64) -> Dial {
             dial.value() + 1f64
         })
     });
-    element
+    flex.fixed(&element, HEIGHT);
 }
 
 fn choice(tooltip: &str, choice: &str, value: u8, flex: &mut Flex) -> Choice {
@@ -393,7 +333,7 @@ fn text(tooltip: &str, value: &str, font: u8, size: u8) -> TextEditor {
     element
 }
 
-fn menu() -> MenuButton {
+fn menu(flex: &mut Flex) {
     let element = MenuButton::default();
     element
         .clone()
@@ -415,7 +355,7 @@ fn menu() -> MenuButton {
             MenuFlag::Normal,
             move |_| Message::Quit,
         );
-    element
+    flex.fixed(&element, HEIGHT);
 }
 
 fn info() {
