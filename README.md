@@ -107,8 +107,16 @@ cargo run --example flpicture
 
 ![FlPicture](/assets/flpicture.gif)
 
-## Demo
+## Demos
 
 ### [FlErrands](/demos/flerrands)
 
 ![FlPicture](/demos/flerrands/assets/flerrands.gif)
+
+### [FlCSV](/demos/csv)
+
+![FlCSV](/demos/csv/assets/flcsv.png)
+
+### [FlCairo](/demos/cairo)
+
+![FlCairo](/demos/cairo/assets/flcairo.png)
