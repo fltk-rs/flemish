@@ -80,6 +80,7 @@ cargo run --example crud
 cargo run --example flcalculator
 cargo run --example fldialect
 cargo run --example flnetport
+cargo run --example flresters
 cargo run --example flpicture
 ...
 ```
@@ -107,6 +108,10 @@ cargo run --example flpicture
 ### [FlNetPort](/examples/flnetport.rs)
 
 ![FlNetPort](/assets/flnetport.png)
+
+### [FlResters](/examples/flresters.rs)
+
+![FlResters](/assets/flresters.png)
 
 ### [FlPicture](/examples/flpicture.rs)
 
