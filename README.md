@@ -109,9 +109,9 @@ cargo run --example flpicture
 
 ## Demos
 
-### [FlErrands](/demos/flerrands)
+### [FlTodo](/demos/fltodo)
 
-![FlPicture](/demos/flerrands/assets/flerrands.gif)
+![FlTodo](/demos/fltodo/assets/fltodo.gif)
 
 ### [FlCSV](/demos/csv)
 
@@ -120,3 +120,7 @@ cargo run --example flpicture
 ### [FlCairo](/demos/cairo)
 
 ![FlCairo](/demos/cairo/assets/flcairo.png)
+
+### [Flightbooker](/demos/flightbooker)
+
+![Flightbooker](/demos/flightbooker/assets/flightbooker.png)

@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+mod model;
+
 use {
     flemish::{
         app,
@@ -13,15 +15,15 @@ use {
         prelude::*,
         OnEvent, OnMenuEvent, Sandbox, Settings,
     },
-    serde::{Deserialize, Serialize},
+    model::Model,
     std::{env, fs},
 };
 
 pub fn main() {
-    let mut app = Model::new();
-    app.run(Settings {
-        size: app.size,
-        resizable: true,
+    app::GlobalState::<String>::new(env::var("HOME").unwrap() + "/.config/" + NAME);
+    Model::new().run(Settings {
+        size: (360, 640),
+        resizable: false,
         ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
         scheme: Some(app::Scheme::Base),
@@ -29,32 +31,17 @@ pub fn main() {
     })
 }
 
-const NAME: &str = "FlErrands";
-const PATH: &str = "/.config/";
+const NAME: &str = "FlTodo";
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
-const WINDOW_WIDTH: i32 = 360;
-const WINDOW_HEIGHT: i32 = 640;
 
 #[derive(Clone)]
-enum Message {
+pub enum Message {
     New(String),
     Delete(usize),
     Check(usize),
     Change((usize, String)),
     Quit,
-}
-
-#[derive(Deserialize, Serialize)]
-struct Task {
-    status: bool,
-    description: String,
-}
-
-#[derive(Deserialize, Serialize)]
-struct Model {
-    size: (i32, i32),
-    tasks: Vec<Task>,
 }
 
 impl Sandbox for Model {
@@ -65,11 +52,8 @@ impl Sandbox for Model {
     }
 
     fn new() -> Self {
-        let file = env::var("HOME").unwrap() + PATH + NAME;
-        let default = Self {
-            size: (WINDOW_WIDTH, WINDOW_HEIGHT),
-            tasks: Vec::new(),
-        };
+        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
+        let default = Self { tasks: Vec::new() };
         if let Ok(value) = fs::read(file) {
             if let Ok(value) = rmp_serde::from_slice(&value) {
                 value
@@ -139,27 +123,18 @@ impl Sandbox for Model {
 
     fn update(&mut self, message: Message) {
         match message {
-            Message::Quit => self.quit(),
+            Message::Quit => {
+                let file = app::GlobalState::<String>::get().with(move |model| model.clone());
+                self.save(file);
+                app::quit();
+            }
             Message::Delete(idx) => {
                 self.tasks.remove(idx);
             }
             Message::Change((idx, value)) => self.tasks[idx].description = value,
-            Message::Check(idx) => self.tasks[idx].status = !self.tasks[idx].status,
-            Message::New(description) => self.tasks.push(Task {
-                status: false,
-                description,
-            }),
+            Message::Check(idx) => self.check(idx),
+            Message::New(description) => self.add(description),
         }
-    }
-}
-
-impl Model {
-    fn quit(&mut self) {
-        let file = env::var("HOME").unwrap() + PATH + NAME;
-        let window = app::first_window().unwrap();
-        self.size = (window.width(), window.height());
-        fs::write(file, rmp_serde::to_vec(&self).unwrap()).unwrap();
-        app::quit();
     }
 }
 

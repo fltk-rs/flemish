@@ -1,5 +1,5 @@
 use flemish::{
-    app, color_themes, frame::Frame, enums::FrameType, group::Flex, input::{Input,InputType}, prelude::*,
+    app, color_themes, frame::Frame, enums::{FrameType,CallbackTrigger}, group::Flex, input::{Input,InputType}, prelude::*,
     OnEvent, Sandbox, Settings,
 };
 
