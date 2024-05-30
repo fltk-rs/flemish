@@ -261,14 +261,14 @@ impl Model {
         fs::write(
             file,
             [
-                (window.width() / U8) as u8, //[0]
-                (window.width() % U8) as u8, //[1]
-                (window.height() / U8) as u8,//[2]
-                (window.height() % U8) as u8,//[3]
-                self.from, //[4]
-                self.to, //[5]
-                self.font, //[6]
-                self.size, //[7]
+                (window.width() / U8) as u8,  //[0]
+                (window.width() % U8) as u8,  //[1]
+                (window.height() / U8) as u8, //[2]
+                (window.height() % U8) as u8, //[3]
+                self.from,                    //[4]
+                self.to,                      //[5]
+                self.font,                    //[6]
+                self.size,                    //[7]
             ],
         )
         .unwrap();

@@ -49,8 +49,7 @@ impl Sandbox for Model {
             .center_of_parent();
         {
             crate::progress(self.value);
-            crate::slider(self.value)
-                .on_event(move |slider| Message::Slider(slider.value()));
+            crate::slider(self.value).on_event(move |slider| Message::Slider(slider.value()));
         }
         page.end();
         page.set_pad(PAD);
@@ -61,7 +60,6 @@ impl Sandbox for Model {
             Message::SliderChanged(value) => self.value = value,
         }
     }
-
 }
 
 const MAX: f64 = 100f64;

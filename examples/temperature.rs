@@ -1,5 +1,10 @@
 use flemish::{
-    app, color_themes, frame::Frame, enums::{FrameType,CallbackTrigger}, group::Flex, input::{Input,InputType}, prelude::*,
+    app, color_themes,
+    enums::{CallbackTrigger, FrameType},
+    frame::Frame,
+    group::Flex,
+    input::{Input, InputType},
+    prelude::*,
     OnEvent, Sandbox, Settings,
 };
 
@@ -53,7 +58,9 @@ impl Sandbox for Model {
     }
 
     fn view(&mut self) {
-        let mut page = Flex::default().with_size(WIDTH * 3, WIDTH).center_of_parent();
+        let mut page = Flex::default()
+            .with_size(WIDTH * 3, WIDTH)
+            .center_of_parent();
         {
             Frame::default();
             let mut right = Flex::default().column();

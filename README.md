@@ -76,6 +76,7 @@ To run the [examples:](/examples)
 ```bash
 cargo run --example counter
 cargo run --example temperature
+cargo run --example crud
 cargo run --example flcalculator
 cargo run --example fldialect
 cargo run --example flnetport
@@ -90,6 +91,10 @@ cargo run --example flpicture
 ### [FlTemperature](/examples/temperature.rs)
 
 ![FlTemperature](/assets/temperature.png)
+
+### [FlCRUD](/examples/crud.rs)
+
+![FlCRUD](/assets/crud.png)
 
 ### [FlCalculator](/examples/flcalculator.rs)
 

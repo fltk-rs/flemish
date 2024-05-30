@@ -21,7 +21,7 @@ pub fn main() {
     })
 }
 
-const NAME: &str = "Flightbooker";
+const NAME: &str = "7GUI: Flightbooker";
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
 const WIDTH: i32 = PAD * 12;

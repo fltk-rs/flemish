@@ -58,7 +58,10 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        format!("[{}] {:?}:{} - FlNetPort", self.status, self.address, self.port)
+        format!(
+            "[{}] {:?}:{} - FlNetPort",
+            self.status, self.address, self.port
+        )
     }
 
     fn view(&mut self) {
@@ -71,7 +74,8 @@ impl Sandbox for Model {
                     .on_event(move |octet| Message::Octet(idx, octet.value() as u8));
             }
             Frame::default();
-            crate::input(&self.port.to_string(), &mut header).with_label("Port:")
+            crate::input(&self.port.to_string(), &mut header)
+                .with_label("Port:")
                 .on_event(move |input| Message::Port(input.value().parse::<u32>().unwrap()));
             header.fixed(
                 &Button::default()
@@ -146,8 +150,7 @@ fn counter(value: f64, flex: &mut Flex) -> Counter {
 }
 
 fn input(value: &str, flex: &mut Flex) -> Input {
-    let mut element = Input::default()
-        .with_type(InputType::Int);
+    let mut element = Input::default().with_type(InputType::Int);
     element.set_value(value);
     flex.fixed(&element, WIDTH);
     element

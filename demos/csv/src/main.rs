@@ -54,7 +54,7 @@ impl Sandbox for Model {
         let mut page = Flex::default_fill();
         {
             let mut left = Flex::default_fill().column();
-            crate::browser("Browser", self.temp.clone(), self.curr).on_event(move |browser| {
+            crate::browser("Browser", self.clone()).on_event(move |browser| {
                 Message::Choice((browser.value() as usize).saturating_sub(1))
             });
             crate::button("Load image", &mut left).on_event(move |_| Message::Save);
@@ -76,14 +76,14 @@ impl Sandbox for Model {
     }
 }
 
-fn browser(tooltip: &str, temp: Vec<String>, curr: usize) -> Browser {
+fn browser(tooltip: &str, value: Model) -> Browser {
     let mut element = Browser::default().with_type(BrowserType::Hold);
     element.set_tooltip(tooltip);
-    if !temp.is_empty() {
-        for item in temp {
+    if !value.temp.is_empty() {
+        for item in value.temp {
             element.add(&item);
         }
-        element.select(curr as i32 + 1);
+        element.select(value.curr as i32 + 1);
     }
     element
 }

@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    app, button::Button, enums::FrameType, color_themes, frame::Frame, group::Flex, prelude::*,
+    app, button::Button, color_themes, enums::FrameType, frame::Frame, group::Flex, prelude::*,
     OnEvent, Sandbox, Settings,
 };
 
@@ -58,7 +58,9 @@ impl Sandbox for Model {
             Button::default()
                 .with_label("@#<")
                 .on_event(|_| Message::Dec);
-            Frame::default().with_label(&self.value.to_string()).set_frame(FrameType::UpBox);
+            Frame::default()
+                .with_label(&self.value.to_string())
+                .set_frame(FrameType::UpBox);
             Button::default()
                 .with_label("@#>")
                 .on_event(|_| Message::Inc);
@@ -74,5 +76,4 @@ impl Sandbox for Model {
             Message::Dec => self.dec(),
         }
     }
-
 }
