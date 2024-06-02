@@ -106,8 +106,8 @@ impl Sandbox for Model {
     fn update(&mut self, message: Message) {
         match message {
             Message::Choice(value) => self.choice(value),
-            Message::Dec => self.inc(),
-            Message::Inc => self.dec(),
+            Message::Dec => self.dec(),
+            Message::Inc => self.inc(),
         }
     }
 }
@@ -115,6 +115,8 @@ impl Sandbox for Model {
 fn browser(tooltip: &str, value: Model) -> Browser {
     let mut element = Browser::default().with_type(BrowserType::Hold);
     element.set_tooltip(tooltip);
+    element.set_label_font(Font::Zapfdingbats);
+    element.set_text_size(16);
     if !value.list.is_empty() {
         for item in value.list {
             element.add(&item.to_string());
