@@ -17,6 +17,7 @@ use {
 };
 
 pub fn main() {
+    app::GlobalState::<String>::new(env::var("HOME").unwrap() + PATH + NAME);
     Model::new().run(Settings {
         size: (360, 640),
         resizable: false,
@@ -25,6 +26,13 @@ pub fn main() {
         scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
+}
+
+#[derive(PartialEq, Clone)]
+enum Message {
+    Click(String),
+    Theme,
+    Quit,
 }
 
 #[derive(Clone)]
@@ -36,18 +44,64 @@ struct Model {
     theme: bool,
 }
 
-#[derive(PartialEq, Clone)]
-enum Message {
-    Click(String),
-    Theme,
-    Quit,
+impl Model {
+    fn theme(&mut self) {
+        self.theme = !self.theme;
+    }
+    fn click(&mut self, value: String) {
+        match value.as_str() {
+            "/" | "x" | "+" | "-" | "%" => {
+                if self.operation.is_empty() {
+                    self.operation.push_str(&value);
+                    self.prev = self.current.clone();
+                } else {
+                    self.equil();
+                    self.operation = String::from("=");
+                }
+                self.output
+                    .push_str(&format!("{} {}", self.prev, self.operation));
+                self.current = String::from("0");
+            }
+            "=" => self.equil(),
+            "CE" => {
+                self.output.clear();
+                self.operation.clear();
+                self.current = String::from("0");
+                self.prev = String::from("0");
+            }
+            "@<-" => {
+                let label = self.current.clone();
+                self.current = if label.len() > 1 {
+                    String::from(&label[..label.len() - 1])
+                } else {
+                    String::from("0")
+                };
+            }
+            "C" => self.current = String::from("0"),
+            "." => {
+                if !self.current.contains('.') {
+                    self.current.push('.');
+                }
+            }
+            _ => {
+                if self.current == "0" {
+                    self.current.clear();
+                }
+                self.current = self.current.clone() + &value;
+            }
+        };
+    }
 }
 
 impl Sandbox for Model {
     type Message = Message;
 
+    fn title(&self) -> String {
+        String::from(NAME)
+    }
+
     fn new() -> Self {
-        let file = env::var("HOME").unwrap() + PATH + NAME;
+        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
         let theme: bool = match Path::new(&file).exists() {
             true => fs::read(&file).unwrap()[0],
             false => 0,
@@ -59,10 +113,6 @@ impl Sandbox for Model {
             output: String::new(),
             theme,
         }
-    }
-
-    fn title(&self) -> String {
-        String::from(NAME)
     }
 
     fn view(&mut self) {
@@ -122,57 +172,15 @@ impl Sandbox for Model {
     fn update(&mut self, message: Message) {
         match message {
             Message::Quit => self.quit(),
-            Message::Theme => {
-                self.theme = !self.theme;
-            }
-            Message::Click(value) => match value.as_str() {
-                "/" | "x" | "+" | "-" | "%" => {
-                    if self.operation.is_empty() {
-                        self.operation.push_str(&value);
-                        self.prev = self.current.clone();
-                    } else {
-                        self.equil();
-                        self.operation = String::from("=");
-                    }
-                    self.output
-                        .push_str(&format!("{} {}", self.prev, self.operation));
-                    self.current = String::from("0");
-                }
-                "=" => self.equil(),
-                "CE" => {
-                    self.output.clear();
-                    self.operation.clear();
-                    self.current = String::from("0");
-                    self.prev = String::from("0");
-                }
-                "@<-" => {
-                    let label = self.current.clone();
-                    self.current = if label.len() > 1 {
-                        String::from(&label[..label.len() - 1])
-                    } else {
-                        String::from("0")
-                    };
-                }
-                "C" => self.current = String::from("0"),
-                "." => {
-                    if !self.current.contains('.') {
-                        self.current.push('.');
-                    }
-                }
-                _ => {
-                    if self.current == "0" {
-                        self.current.clear();
-                    }
-                    self.current = self.current.clone() + &value;
-                }
-            },
+            Message::Theme => self.theme(),
+            Message::Click(value) => self.click(value),
         };
     }
 }
 
 impl Model {
     fn quit(&self) {
-        let file = env::var("HOME").unwrap() + PATH + NAME;
+        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
         fs::write(file, [self.theme as u8]).unwrap();
         app::quit();
     }

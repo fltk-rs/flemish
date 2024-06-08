@@ -3,7 +3,9 @@
 resolver = "2"
 members = [
     "cairo",
-    "flerrands",
+    "csv",
+    "fltodo",
+    "flightbooker",
 ]
 
 [profile.release]

@@ -11,15 +11,14 @@ use flemish::{
     image::SharedImage,
     menu::{MenuButton, MenuFlag},
     prelude::*,
-    valuator::{Slider, SliderType},
     OnEvent, OnMenuEvent, Sandbox, Settings,
 };
 use std::fs;
 
 pub fn main() {
     Model::new().run(Settings {
-        size: (640, 480),
-        resizable: true,
+        size: (640, 360),
+        resizable: false,
         ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
         scheme: Some(app::Scheme::Base),
@@ -30,15 +29,16 @@ pub fn main() {
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
 
+#[derive(Debug, Clone)]
 struct Image {
     file: String,
     image: SharedImage,
 }
 
+#[derive(Debug, Clone)]
 struct Model {
     list: Vec<Image>,
-    size: f64,
-    current: usize,
+    curr: usize,
 }
 
 #[derive(Clone, Copy)]
@@ -56,8 +56,7 @@ impl Sandbox for Model {
     fn new() -> Self {
         Self {
             list: Vec::new(),
-            size: 1f64,
-            current: 0,
+            curr: 0,
         }
     }
 
@@ -67,45 +66,24 @@ impl Sandbox for Model {
 
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
-        let mut header = Flex::default();
-        crate::menu(&mut header);
-        crate::button("Open", "@#fileopen", &mut header).on_event(|_| Message::Open);
-        crate::button("Prev", "@#|<", &mut header).on_event(|_| Message::Prev);
-        let mut size = crate::slider("Size").with_type(SliderType::Horizontal);
-        crate::button("Next", "@#>|", &mut header).on_event(|_| Message::Next);
-        crate::button("Remove", "@#1+", &mut header).on_event(|_| Message::Remove);
-        header.end();
-        let mut hero = Flex::default_fill();
-        let mut frame = crate::frame("Image").with_id("image-frame");
-        hero.end();
-        page.end();
         {
+            let mut header = Flex::default();
+            crate::menu(&mut header);
+            crate::button("Open", "@#fileopen", &mut header).on_event(|_| Message::Open);
+            crate::button("Prev", "@#|<", &mut header).on_event(|_| Message::Prev);
+            Frame::default();
+            crate::button("Next", "@#>|", &mut header).on_event(|_| Message::Next);
+            crate::button("Remove", "@#1+", &mut header).on_event(|_| Message::Remove);
+            header.end();
             header.set_pad(0);
             header.set_margin(0);
-            header.set_frame(FrameType::DownBox);
-            hero.set_margin(0);
-            hero.set_frame(FrameType::DownBox);
-            page.set_frame(FrameType::FlatBox);
-            page.set_pad(PAD);
-            page.set_margin(PAD);
             page.fixed(&header, HEIGHT);
+            crate::frame("Image", self.clone());
         }
-
-        let image = if self.list.is_empty() {
-            None::<SharedImage>
-        } else {
-            let mut image = self.list[self.current].image.clone();
-            image.scale(
-                (frame.w() as f64 * self.size) as i32,
-                (frame.h() as f64 * self.size) as i32,
-                true,
-                true,
-            );
-            Some(image)
-        };
-
-        frame.set_image(image.clone());
-        size.set_callback(move |s| slider_cb(s, image.clone()));
+        page.end();
+        page.set_pad(PAD);
+        page.set_margin(PAD);
+        page.set_frame(FrameType::FlatBox);
     }
 
     fn update(&mut self, message: Message) {
@@ -139,14 +117,14 @@ impl Model {
                     };
                 };
             }
-            self.current = 0;
+            self.curr = 0;
         };
     }
 
     fn prev(&mut self) {
         if !self.list.is_empty() {
-            self.current = match self.current > 0 {
-                true => self.current.saturating_sub(1),
+            self.curr = match self.curr > 0 {
+                true => self.curr.saturating_sub(1),
                 false => self.list.len() - 1,
             };
         }
@@ -154,8 +132,8 @@ impl Model {
 
     fn next(&mut self) {
         if !self.list.is_empty() {
-            self.current = match self.current < self.list.len() - 1 {
-                true => self.current.saturating_add(1),
+            self.curr = match self.curr < self.list.len() - 1 {
+                true => self.curr.saturating_add(1),
                 false => 0,
             };
         }
@@ -165,11 +143,11 @@ impl Model {
         if !self.list.is_empty() {
             match choice2_default("Remove ...?", "Remove", "Cancel", "Permanent") {
                 Some(0) => {
-                    self.list.remove(self.current);
+                    self.list.remove(self.curr);
                 }
                 Some(2) => {
-                    if fs::remove_file(self.list[self.current].file.clone()).is_ok() {
-                        self.list.remove(self.current);
+                    if fs::remove_file(self.list[self.curr].file.clone()).is_ok() {
+                        self.list.remove(self.curr);
                     }
                 }
                 _ => {}
@@ -186,10 +164,14 @@ fn button(tooltip: &str, label: &str, flex: &mut Flex) -> Button {
     element
 }
 
-fn frame(tooltip: &str) -> Frame {
-    let mut element = Frame::default_fill();
+fn frame(tooltip: &str, value: Model) -> Frame {
+    let mut element = Frame::default();
     element.set_tooltip(tooltip);
-    element.set_image(None::<SharedImage>);
+    element.set_image(match value.list.is_empty() {
+        true => None::<SharedImage>,
+        false => Some(value.list[value.curr].image.clone()),
+    });
+    element.set_frame(FrameType::DownBox);
     element
 }
 
@@ -228,25 +210,4 @@ fn menu(flex: &mut Flex) {
             MenuFlag::Normal,
             |_| Message::Quit,
         );
-}
-
-fn slider(tooltip: &str) -> Slider {
-    let mut element = Slider::default();
-    element.set_tooltip(tooltip);
-    element.set_value(element.maximum());
-    element
-}
-
-fn slider_cb(s: &mut Slider, image: Option<SharedImage>) {
-    let mut frame: Frame = app::widget_from_id("image-frame").unwrap();
-    if let Some(mut image) = image.clone() {
-        image.scale(
-            (frame.width() as f64 * s.value()) as i32,
-            (frame.height() as f64 * s.value()) as i32,
-            true,
-            true,
-        );
-        frame.set_image(Some(image));
-        app::redraw();
-    }
 }

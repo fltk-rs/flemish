@@ -8,7 +8,7 @@ use {
         enums::FrameType,
         frame::Frame,
         group::Flex,
-        input::IntInput,
+        input::{Input, InputType},
         prelude::*,
         valuator::{Counter, CounterType},
         OnEvent, Sandbox, Settings,
@@ -32,18 +32,18 @@ pub fn main() {
     })
 }
 
-#[derive(Clone)]
-struct Model {
-    status: String,
-    address: [u8; 4],
-    port: u32,
-}
-
 #[derive(Clone, Copy)]
 enum Message {
     Octet(usize, u8),
     Port(u32),
     Check,
+}
+
+#[derive(Clone)]
+struct Model {
+    status: String,
+    address: [u8; 4],
+    port: u32,
 }
 
 impl Sandbox for Model {
@@ -58,47 +58,43 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        String::from("FlNetPort")
+        format!(
+            "[{}] {:?}:{} - FlNetPort",
+            self.status, self.address, self.port
+        )
     }
 
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
-        let mut header = Flex::default();
-        header.fixed(&Frame::default().with_label("IP address:"), WIDTH);
-        for idx in 0..4 {
-            let mut octet = crate::counter(&mut header);
-            octet.set_value(self.address[idx] as f64);
-            octet
-                .clone()
-                .on_event(move |_| Message::Octet(idx, octet.value() as u8));
-        }
-        Frame::default();
-        let mut port = IntInput::default().with_label("Port:");
-        port.set_value(&self.port.to_string());
-        header.fixed(&port, WIDTH);
-        port.clone()
-            .on_event(move |_| Message::Port(port.value().parse::<u32>().unwrap()));
-        header.end();
-        let mut hero = Flex::default();
-        Frame::default().with_label(&self.status);
-        hero.end();
-        let mut footer = Flex::default();
-        Button::default()
-            .with_label("Check")
-            .on_event(move |_| Message::Check);
-        footer.end();
-        page.end();
         {
-            header.set_frame(FrameType::DownFrame);
+            let mut header = Flex::default();
+            header.fixed(&Frame::default().with_label("IP address:"), WIDTH);
+            for idx in 0..4 {
+                crate::counter(self.address[idx] as f64, &mut header)
+                    .on_event(move |octet| Message::Octet(idx, octet.value() as u8));
+            }
+            Frame::default();
+            crate::input(&self.port.to_string(), &mut header)
+                .with_label("Port:")
+                .on_event(move |input| Message::Port(input.value().parse::<u32>().unwrap()));
+            header.fixed(
+                &Button::default()
+                    .with_label("@#->")
+                    .clone()
+                    .on_event(move |_| Message::Check),
+                HEIGHT,
+            );
+            header.end();
             header.set_pad(0);
-            hero.set_frame(FrameType::DownFrame);
-            footer.set_frame(FrameType::DownFrame);
-            page.set_pad(PAD);
-            page.set_margin(PAD);
-            page.set_frame(FrameType::FlatBox);
             page.fixed(&header, HEIGHT);
-            page.fixed(&footer, HEIGHT);
         }
+        Frame::default()
+            .with_label(&self.status)
+            .set_frame(FrameType::DownFrame);
+        page.end();
+        page.set_pad(PAD);
+        page.set_margin(PAD);
+        page.set_frame(FrameType::FlatBox);
     }
 
     fn update(&mut self, message: Message) {
@@ -144,10 +140,18 @@ impl Sandbox for Model {
     }
 }
 
-fn counter(flex: &mut Flex) -> Counter {
+fn counter(value: f64, flex: &mut Flex) -> Counter {
     let mut element = Counter::default().with_type(CounterType::Simple);
-    element.set_range(0_f64, 254_f64);
+    element.set_maximum(254_f64);
     element.set_precision(0);
+    element.set_value(value);
+    flex.fixed(&element, WIDTH);
+    element
+}
+
+fn input(value: &str, flex: &mut Flex) -> Input {
+    let mut element = Input::default().with_type(InputType::Int);
+    element.set_value(value);
     flex.fixed(&element, WIDTH);
     element
 }

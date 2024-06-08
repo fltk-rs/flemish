@@ -74,12 +74,29 @@ impl Sandbox for Counter {
 
 To run the [examples:](/examples)
 ```bash
+cargo run --example counter
+cargo run --example temperature
+cargo run --example crud
 cargo run --example flcalculator
 cargo run --example fldialect
+cargo run --example flglyph
 cargo run --example flnetport
 cargo run --example flpicture
+cargo run --example flresters
 ...
 ```
+
+### [FlCounter](/examples/counter.rs)
+
+![FlCalculator](/assets/counter.png)
+
+### [FlTemperature](/examples/temperature.rs)
+
+![FlTemperature](/assets/temperature.png)
+
+### [FlCRUD](/examples/crud.rs)
+
+![FlCRUD](/assets/crud.png)
 
 ### [FlCalculator](/examples/flcalculator.rs)
 
@@ -89,16 +106,36 @@ cargo run --example flpicture
 
 ![FlDialect](/assets/fldialect.gif)
 
+### [FlGlyph](/examples/flglyph.rs)
+
+![FlGlyph](/assets/flglyph.png)
+
 ### [FlNetPort](/examples/flnetport.rs)
 
-![FlNetPort](/assets/flnetport.gif)
+![FlNetPort](/assets/flnetport.png)
 
 ### [FlPicture](/examples/flpicture.rs)
 
 ![FlPicture](/assets/flpicture.gif)
 
-## Demo
+### [FlResters](/examples/flresters.rs)
 
-### [FlErrands](/demos/flerrands)
+![FlResters](/assets/flresters.png)
 
-![FlPicture](/demos/flerrands/assets/flerrands.gif)
+## Demos
+
+### [FlTodo](/demos/fltodo)
+
+![FlTodo](/demos/fltodo/assets/fltodo.gif)
+
+### [FlCSV](/demos/csv)
+
+![FlCSV](/demos/csv/assets/flcsv.png)
+
+### [FlCairo](/demos/cairo)
+
+![FlCairo](/demos/cairo/assets/flcairo.png)
+
+### [Flightbooker](/demos/flightbooker)
+
+![Flightbooker](/demos/flightbooker/assets/flightbooker.png)

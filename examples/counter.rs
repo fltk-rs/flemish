@@ -1,13 +1,13 @@
 #![forbid(unsafe_code)]
 
 use flemish::{
-    app, button::Button, color_themes, frame::Frame, group::Flex, prelude::*, valuator::Dial,
+    app, button::Button, color_themes, enums::FrameType, frame::Frame, group::Flex, prelude::*,
     OnEvent, Sandbox, Settings,
 };
 
 pub fn main() {
-    Counter::new().run(Settings {
-        size: (100, 300),
+    Model::new().run(Settings {
+        size: (640, 360),
         resizable: false,
         ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
@@ -16,63 +16,64 @@ pub fn main() {
     })
 }
 
-const PAD: i32 = 10;
-const DIAL: u8 = 120;
+#[derive(Debug, Clone, Copy)]
+enum Message {
+    Inc,
+    Dec,
+}
 
-struct Counter {
+struct Model {
     value: u8,
 }
 
-#[derive(Debug, Clone, Copy)]
-enum Message {
-    IncrementPressed,
-    DecrementPressed,
+impl Model {
+    fn default() -> Self {
+        Self { value: 0u8 }
+    }
+    fn inc(&mut self) {
+        self.value = self.value.saturating_add(1);
+    }
+    fn dec(&mut self) {
+        self.value = self.value.saturating_sub(1);
+    }
+    fn value(&self) -> String {
+        self.value.to_string()
+    }
 }
 
-impl Sandbox for Counter {
+impl Sandbox for Model {
     type Message = Message;
 
     fn new() -> Self {
-        Self { value: 0 }
+        Self::default()
     }
 
     fn title(&self) -> String {
-        String::from("Counter - fltk-rs")
+        format!("{} - 7GUI: Counter", self.value())
+    }
+
+    fn view(&mut self) {
+        let mut page = Flex::default().with_size(300, 100).center_of_parent();
+        {
+            Button::default()
+                .with_label("@#<")
+                .on_event(|_| Message::Dec);
+            Frame::default()
+                .with_label(&self.value.to_string())
+                .set_frame(FrameType::UpBox);
+            Button::default()
+                .with_label("@#>")
+                .on_event(|_| Message::Inc);
+        }
+        page.end();
+        page.set_pad(0);
+        page.set_margin(10);
     }
 
     fn update(&mut self, message: Message) {
         match message {
-            Message::IncrementPressed => {
-                if self.value == DIAL - 1 {
-                    self.value = 0;
-                } else {
-                    self.value += 1;
-                }
-            }
-            Message::DecrementPressed => {
-                if self.value == 0 {
-                    self.value = DIAL - 1;
-                } else {
-                    self.value -= 1;
-                }
-            }
+            Message::Inc => self.inc(),
+            Message::Dec => self.dec(),
         }
-    }
-
-    fn view(&mut self) {
-        let mut page = Flex::default_fill().column();
-        Button::default()
-            .with_label("Increment")
-            .on_event(|_| Message::IncrementPressed);
-        Frame::default().with_label(&self.value.to_string());
-        Button::default()
-            .with_label("Decrement")
-            .on_event(|_| Message::DecrementPressed);
-        let mut dial = Dial::default();
-        dial.set_maximum((DIAL / 4 * 3) as f64);
-        dial.set_value(self.value as f64);
-        dial.deactivate();
-        page.end();
-        page.set_margin(PAD);
     }
 }

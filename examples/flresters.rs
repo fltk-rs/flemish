@@ -7,8 +7,8 @@ use {
         color_themes,
         enums::{Align, Color, Font, FrameType},
         frame::Frame,
+        misc::InputChoice,
         group::Flex,
-        input::Input,
         menu::Choice,
         prelude::*,
         text::{StyleTableEntry, TextBuffer, TextDisplay, WrapMode},
@@ -62,10 +62,11 @@ impl Sandbox for Model {
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
         let mut header = Flex::default();
-        crate::choice(self.method as i32, &mut header)
+        header.fixed(&Frame::default(), WIDTH);
+        crate::choice(self.method as i32, &mut header).with_label("Method: ")
             .on_event(move |choice| Message::Method(choice.value() as u8));
-        header.fixed(&Frame::default().with_label("https://"), WIDTH);
-        crate::input(&self.url).on_event(move |input| Message::Url(input.value()));
+        header.fixed(&Frame::default(), WIDTH);
+        crate::input(&self.url).on_event(move |input| Message::Url(input.value().unwrap()));
         crate::button(&mut header).on_event(move |_| Message::Request);
         header.end();
         crate::text(&self.responce);
@@ -145,8 +146,13 @@ fn button(flex: &mut Flex) -> Button {
     element
 }
 
-fn input(value: &str) -> Input {
-    let mut element = Input::default();
+fn input(value: &str) -> InputChoice {
+    let mut element = InputChoice::default().with_label("URL: ");
+    for item in ["users", "posts", "albums", "todos", "comments", "posts"] {
+        element.add(&(format!(r#"https:\/\/jsonplaceholder.typicode.com\/{item}"#)));
+    }
+    element.add(r#"https:\/\/lingva.ml\/api\/v1\/languages"#);
+    element.add(r#"https:\/\/ipinfo.io\/json"#);
     element.set_value(value);
     element
 }
