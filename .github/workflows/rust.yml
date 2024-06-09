@@ -58,10 +58,3 @@ jobs:
         if [[ ${RUNNER_OS} == "Linux" ]]; then
             cargo build --quiet || cargo build --verbose
         fi
-    - name: Build flerrands
-      working-directory: demos/flerrands
-      shell: bash
-      run: |
-        if [[ ${RUNNER_OS} == "Linux" ]]; then
-            cargo build --quiet || cargo build --verbose
-        fi
