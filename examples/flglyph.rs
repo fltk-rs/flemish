@@ -4,7 +4,7 @@ use flemish::{
     app,
     button::Button,
     color_themes,
-    enums::{FrameType, Font},
+    enums::{CallbackTrigger, FrameType, Font},
     frame::Frame,
     browser::{Browser, BrowserType},
     group::Flex,
@@ -114,6 +114,7 @@ impl Sandbox for Model {
 
 fn browser(tooltip: &str, value: Model) -> Browser {
     let mut element = Browser::default().with_type(BrowserType::Hold);
+    element.set_trigger(CallbackTrigger::Changed);
     element.set_tooltip(tooltip);
     element.set_label_font(Font::Zapfdingbats);
     element.set_text_size(16);
@@ -122,6 +123,7 @@ fn browser(tooltip: &str, value: Model) -> Browser {
             element.add(&item.to_string());
         }
         element.select(value.curr as i32 + 1);
+        element.top_line(value.curr as i32 + 1);
     }
     element
 }
