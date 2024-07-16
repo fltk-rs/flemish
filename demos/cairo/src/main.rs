@@ -1,12 +1,12 @@
 mod model;
 
 use {
-    cairo::{Context, Format, ImageSurface},
+    cairo::Context,
     flemish::{
         app,
         frame::Frame,
         color_themes,
-        enums::{Color, FrameType},
+        enums::Color,
         prelude::*,
         OnEvent, Sandbox, Settings,
     },
