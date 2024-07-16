@@ -130,11 +130,11 @@ cargo run --example flresters
 
 ### [FlCSV](/demos/csv)
 
-![FlCSV](/demos/csv/assets/flcsv.png)
+![FlCSV](https://github.com/fltk-rs/demos/blob/master/csv/assets/csv.gif)
 
 ### [FlCairo](/demos/cairo)
 
-![FlCairo](/demos/cairo/assets/flcairo.png)
+![FlCairo](https://github.com/fltk-rs/demos/blob/master/cairo/assets/scrot.png)
 
 ### [Flightbooker](/demos/flightbooker)
 

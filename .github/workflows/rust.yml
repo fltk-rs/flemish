@@ -56,3 +56,17 @@ jobs:
         if [[ ${RUNNER_OS} == "Linux" ]]; then
             cargo build --quiet || cargo build --verbose
         fi
+    - name: Build cairo_shadow_button
+      working-directory: demos/cairo_shadow_button
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
+    - name: Build csv
+      working-directory: demos/csv
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
