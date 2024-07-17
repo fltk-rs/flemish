@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "cairo",
     "cairo_shadow_button",
+    "calculator",
     "csv",
     "fltodo",
     "flightbooker",

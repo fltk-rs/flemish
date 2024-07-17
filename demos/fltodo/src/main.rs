@@ -52,7 +52,7 @@ impl Sandbox for Model {
     }
 
     fn new() -> Self {
-        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
+        let file = app::GlobalState::<String>::get().with(move |file| file.clone());
         let default = Self { tasks: Vec::new() };
         if let Ok(value) = fs::read(file) {
             if let Ok(value) = rmp_serde::from_slice(&value) {
@@ -124,8 +124,7 @@ impl Sandbox for Model {
     fn update(&mut self, message: Message) {
         match message {
             Message::Quit => {
-                let file = app::GlobalState::<String>::get().with(move |model| model.clone());
-                self.save(file);
+                self.save(app::GlobalState::<String>::get().with(move |file| file.clone()));
                 app::quit();
             }
             Message::Delete(idx) => {

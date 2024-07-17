@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+mod model;
 
 use {
     flemish::{
@@ -13,11 +14,11 @@ use {
         text::{TextBuffer, TextDisplay, WrapMode},
         OnEvent, OnMenuEvent, Sandbox, Settings,
     },
-    std::{env, fs, path::Path},
+    model::Model,
 };
 
-pub fn main() {
-    app::GlobalState::<String>::new(env::var("HOME").unwrap() + PATH + NAME);
+fn main() {
+    app::GlobalState::<String>::new(std::env::var("HOME").unwrap() + PATH + NAME);
     Model::new().run(Settings {
         size: (360, 640),
         resizable: false,
@@ -29,68 +30,10 @@ pub fn main() {
 }
 
 #[derive(PartialEq, Clone)]
-enum Message {
+pub enum Message {
     Click(String),
     Theme,
     Quit,
-}
-
-#[derive(Clone)]
-struct Model {
-    prev: String,
-    operation: String,
-    current: String,
-    output: String,
-    theme: bool,
-}
-
-impl Model {
-    fn theme(&mut self) {
-        self.theme = !self.theme;
-    }
-    fn click(&mut self, value: String) {
-        match value.as_str() {
-            "/" | "x" | "+" | "-" | "%" => {
-                if self.operation.is_empty() {
-                    self.operation.push_str(&value);
-                    self.prev = self.current.clone();
-                } else {
-                    self.equil();
-                    self.operation = String::from("=");
-                }
-                self.output
-                    .push_str(&format!("{} {}", self.prev, self.operation));
-                self.current = String::from("0");
-            }
-            "=" => self.equil(),
-            "CE" => {
-                self.output.clear();
-                self.operation.clear();
-                self.current = String::from("0");
-                self.prev = String::from("0");
-            }
-            "@<-" => {
-                let label = self.current.clone();
-                self.current = if label.len() > 1 {
-                    String::from(&label[..label.len() - 1])
-                } else {
-                    String::from("0")
-                };
-            }
-            "C" => self.current = String::from("0"),
-            "." => {
-                if !self.current.contains('.') {
-                    self.current.push('.');
-                }
-            }
-            _ => {
-                if self.current == "0" {
-                    self.current.clear();
-                }
-                self.current = self.current.clone() + &value;
-            }
-        };
-    }
 }
 
 impl Sandbox for Model {
@@ -101,18 +44,8 @@ impl Sandbox for Model {
     }
 
     fn new() -> Self {
-        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
-        let theme: bool = match Path::new(&file).exists() {
-            true => fs::read(&file).unwrap()[0],
-            false => 0,
-        } != 0;
-        Self {
-            prev: String::from("0"),
-            operation: String::new(),
-            current: String::from("0"),
-            output: String::new(),
-            theme,
-        }
+        let file = app::GlobalState::<String>::get().with(move |file| file.clone());
+        Model::default(&file)
     }
 
     fn view(&mut self) {
@@ -121,12 +54,12 @@ impl Sandbox for Model {
         crate::display("Output", &self.output, self.theme as usize);
         let mut row = Flex::default();
         row.fixed(
-            &crate::output("Operation", &self.operation, self.theme as usize),
+            &crate::output("Operation", self.theme as usize).with_label(&self.operation),
             30,
         );
         let mut col = Flex::default().column();
-        crate::output("Previous", &self.prev, self.theme as usize);
-        crate::output("Current", &self.current, self.theme as usize);
+        crate::output("Previous", self.theme as usize).with_label(&self.prev.to_string());
+        crate::output("Current", self.theme as usize).with_label(&self.current);
         col.end();
         row.end();
         let mut buttons = Flex::default_fill().column();
@@ -171,42 +104,14 @@ impl Sandbox for Model {
 
     fn update(&mut self, message: Message) {
         match message {
-            Message::Quit => self.quit(),
-            Message::Theme => self.theme(),
+            Message::Quit => {
+                let file = app::GlobalState::<String>::get().with(move |file| file.clone());
+                self.save(&file);
+                app::quit();
+            }
+            Message::Theme => self.theme = !self.theme,
             Message::Click(value) => self.click(value),
         };
-    }
-}
-
-impl Model {
-    fn quit(&self) {
-        let file = app::GlobalState::<String>::get().with(move |model| model.clone());
-        fs::write(file, [self.theme as u8]).unwrap();
-        app::quit();
-    }
-    fn equil(&mut self) {
-        if !self.operation.is_empty() {
-            let left: f64 = self.prev.parse().unwrap();
-            let right: f64 = self.current.parse().unwrap();
-            let temp = match self.operation.as_str() {
-                "/" => left / right,
-                "x" => left * right,
-                "+" => left + right,
-                "-" => left - right,
-                _ => left / 100.0 * right,
-            };
-            self.output.push_str(&format!(
-                " {right}\n{} = {temp}\n",
-                (0..=left.to_string().len())
-                    .map(|_| ' ')
-                    .collect::<String>(),
-            ));
-            self.prev = temp.to_string();
-        } else {
-            self.prev = self.current.clone();
-        }
-        self.operation.clear();
-        self.current = String::from("0");
     }
 }
 
@@ -219,22 +124,21 @@ fn display(tooltip: &str, value: &str, theme: usize) {
     element.set_scrollbar_size(3);
     element.set_frame(FrameType::FlatBox);
     element.wrap_mode(WrapMode::AtBounds, 0);
-    element.set_color(COLORS[theme as usize][0]);
-    element.set_text_color(COLORS[theme as usize][1]);
+    element.set_color(COLORS[theme][0]);
+    element.set_text_color(COLORS[theme][1]);
     element.scroll(
         element.buffer().unwrap().text().split_whitespace().count() as i32,
         0,
     );
 }
 
-fn output(tooltip: &str, value: &str, theme: usize) -> Frame {
+fn output(tooltip: &str, theme: usize) -> Frame {
     let mut element = Frame::default().with_align(Align::Right | Align::Inside);
     element.set_tooltip(tooltip);
     element.set_label_size(HEIGHT);
-    element.set_label(value);
     element.set_frame(FrameType::FlatBox);
-    element.set_color(COLORS[theme as usize][0]);
-    element.set_label_color(COLORS[theme as usize][1]);
+    element.set_color(COLORS[theme][0]);
+    element.set_label_color(COLORS[theme][1]);
     element
 }
 

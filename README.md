@@ -77,7 +77,6 @@ To run the [examples:](/examples)
 cargo run --example counter
 cargo run --example temperature
 cargo run --example crud
-cargo run --example flcalculator
 cargo run --example fldialect
 cargo run --example flglyph
 cargo run --example flnetport
@@ -88,7 +87,7 @@ cargo run --example flresters
 
 ### [FlCounter](/examples/counter.rs)
 
-![FlCalculator](/assets/counter.png)
+![FlCounter](/assets/counter.png)
 
 ### [FlTemperature](/examples/temperature.rs)
 
@@ -98,9 +97,9 @@ cargo run --example flresters
 
 ![FlCRUD](/assets/crud.png)
 
-### [FlCalculator](/examples/flcalculator.rs)
+### [FlCalculator](/examples/calculator.rs)
 
-![FlCalculator](/assets/flcalculator.gif)
+![FlCalculator](https://github.com/fltk-rs/demos/tree/master/flcalculator/assets/flcalculator.gif)
 
 ### [FlDialect](/examples/fldialect.rs)
 
