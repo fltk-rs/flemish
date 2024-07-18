@@ -6,7 +6,7 @@ use {
         app,
         button::Button,
         color_themes,
-        enums::{Align, Color, Event, Font, FrameType, Key, Shortcut},
+        enums::{Align, Color, Cursor, Event, Font, FrameType, Key, Shortcut},
         frame::Frame,
         group::Flex,
         menu::{MenuButton, MenuButtonType, MenuFlag},
@@ -17,8 +17,31 @@ use {
     model::Model,
 };
 
+const PAD: i32 = 10;
+const HEIGHT: i32 = PAD * 3;
+const EQUAL: &str = "=";
+const COLORS: [[Color; 6]; 2] = [
+    [
+        Color::from_hex(0xfdf6e3),
+        Color::from_hex(0x586e75),
+        Color::from_hex(0xb58900),
+        Color::from_hex(0xeee8d5),
+        Color::from_hex(0xcb4b16),
+        Color::from_hex(0xdc322f),
+    ],
+    [
+        Color::from_hex(0x002b36),
+        Color::from_hex(0x93a1a1),
+        Color::from_hex(0x268bd2),
+        Color::from_hex(0x073642),
+        Color::from_hex(0x6c71c4),
+        Color::from_hex(0xd33682),
+    ],
+];
+const NAME: &str = "FlCalculator";
+
 fn main() {
-    app::GlobalState::<String>::new(std::env::var("HOME").unwrap() + PATH + NAME);
+    app::GlobalState::<String>::new(std::env::var("HOME").unwrap() + "/.config/" + NAME);
     Model::new().run(Settings {
         size: (360, 640),
         resizable: false,
@@ -63,7 +86,13 @@ impl Sandbox for Model {
         col.end();
         row.end();
         let mut buttons = Flex::default_fill().column();
-        for line in BUTTONS {
+        for line in [
+            ["CE", "C", "%", "/"],
+            ["7", "8", "9", "x"],
+            ["4", "5", "6", "-"],
+            ["1", "2", "3", "+"],
+            ["0", ".", "@<-", crate::EQUAL],
+        ] {
             let mut row = Flex::default();
             for label in line {
                 crate::button(label, self.theme as usize)
@@ -81,7 +110,7 @@ impl Sandbox for Model {
             row.set_margin(0);
             buttons.set_pad(PAD);
             buttons.set_margin(0);
-            buttons.handle(move |_, event| match event {
+            buttons.handle(move |flex, event| match event {
                 Event::Push => match app::event_mouse_button() {
                     app::MouseButton::Right => {
                         menu.popup();
@@ -89,6 +118,14 @@ impl Sandbox for Model {
                     }
                     _ => false,
                 },
+                Event::Enter => {
+                    flex.window().unwrap().set_cursor(Cursor::Hand);
+                    true
+                }
+                Event::Leave => {
+                    flex.window().unwrap().set_cursor(Cursor::Arrow);
+                    true
+                }
                 _ => false,
             });
             page.set_margin(PAD);
@@ -110,7 +147,7 @@ impl Sandbox for Model {
                 app::quit();
             }
             Message::Theme => self.theme = !self.theme,
-            Message::Click(value) => self.click(value),
+            Message::Click(value) => self.click(&value),
         };
     }
 }
@@ -149,7 +186,7 @@ fn button(label: &'static str, theme: usize) -> Button {
     match label {
         "@<-" => element.set_shortcut(Shortcut::None | Key::BackSpace),
         "CE" => element.set_shortcut(Shortcut::None | Key::Delete),
-        "=" => element.set_shortcut(Shortcut::None | Key::Enter),
+        crate::EQUAL => element.set_shortcut(Shortcut::None | Key::Enter),
         "x" => element.set_shortcut(Shortcut::None | '*'),
         _ => element.set_shortcut(Shortcut::None | label.chars().next().unwrap()),
     }
@@ -162,7 +199,7 @@ fn button(label: &'static str, theme: usize) -> Button {
             element.set_color(COLORS[theme][4]);
             element.set_label_color(COLORS[theme][0]);
         }
-        "=" => {
+        crate::EQUAL => {
             element.set_color(COLORS[theme][5]);
             element.set_label_color(COLORS[theme][0]);
         }
@@ -197,37 +234,7 @@ pub fn menu(theme: usize) -> MenuButton {
             move |_| Message::Quit,
         );
     if theme != 0 {
-        element.at(1).unwrap().set();
+        element.at(0).unwrap().set();
     };
     element
 }
-
-const COLORS: [[Color; 6]; 2] = [
-    [
-        Color::from_hex(0xfdf6e3),
-        Color::from_hex(0x586e75),
-        Color::from_hex(0xb58900),
-        Color::from_hex(0xeee8d5),
-        Color::from_hex(0xcb4b16),
-        Color::from_hex(0xdc322f),
-    ],
-    [
-        Color::from_hex(0x002b36),
-        Color::from_hex(0x93a1a1),
-        Color::from_hex(0x268bd2),
-        Color::from_hex(0x073642),
-        Color::from_hex(0x6c71c4),
-        Color::from_hex(0xd33682),
-    ],
-];
-const BUTTONS: [[&str; 4]; 5] = [
-    ["CE", "C", "%", "/"],
-    ["7", "8", "9", "x"],
-    ["4", "5", "6", "-"],
-    ["1", "2", "3", "+"],
-    ["0", ".", "@<-", "="],
-];
-const PAD: i32 = 10;
-const HEIGHT: i32 = PAD * 3;
-const NAME: &str = "FlCalculator";
-const PATH: &str = "/.config";

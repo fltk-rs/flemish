@@ -63,6 +63,13 @@ jobs:
         if [[ ${RUNNER_OS} == "Linux" ]]; then
             cargo build --quiet || cargo build --verbose
         fi
+    - name: Build calculator
+      working-directory: demos/calculator
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
     - name: Build csv
       working-directory: demos/csv
       shell: bash

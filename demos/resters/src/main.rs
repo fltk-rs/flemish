@@ -1,11 +1,13 @@
 #![forbid(unsafe_code)]
 
+mod model;
+
 use {
     flemish::{
         app,
         button::Button,
         color_themes,
-        enums::{Align, Color, Font, FrameType},
+        enums::{Align, Color, Event, Font, FrameType},
         frame::Frame,
         misc::InputChoice,
         group::Flex,
@@ -13,11 +15,15 @@ use {
         prelude::*,
         text::{StyleTableEntry, TextBuffer, TextDisplay, WrapMode},
         OnEvent, Sandbox, Settings,
+        valuator::Dial,
     },
     std::{process::Command, thread},
+    model::Model,
 };
 
-pub fn main() {
+const SPINNER: Event = Event::from_i32(405);
+
+fn main() {
     Model::new().run(Settings {
         size: (640, 360),
         resizable: false,
@@ -29,30 +35,17 @@ pub fn main() {
 }
 
 #[derive(Clone)]
-struct Model {
-    method: u8,
-    url: String,
-    responce: String,
-    status: String,
-}
-
-#[derive(Clone)]
-enum Message {
+pub enum Message {
     Method(u8),
     Url(String),
-    Request,
+    Thread,
 }
 
 impl Sandbox for Model {
     type Message = Message;
 
     fn new() -> Self {
-        Self {
-            method: 0,
-            url: String::new(),
-            responce: String::new(),
-            status: String::new(),
-        }
+        Model::default()
     }
 
     fn title(&self) -> String {
@@ -67,7 +60,7 @@ impl Sandbox for Model {
             .on_event(move |choice| Message::Method(choice.value() as u8));
         header.fixed(&Frame::default(), WIDTH);
         crate::input(&self.url).on_event(move |input| Message::Url(input.value().unwrap()));
-        crate::button(&mut header).on_event(move |_| Message::Request);
+        crate::button(&mut header).on_event(move |_| Message::Thread);
         header.end();
         crate::text(&self.responce);
         let mut footer = Flex::default();
@@ -79,6 +72,7 @@ impl Sandbox for Model {
                 .with_label(&self.status),
             WIDTH,
         );
+        footer.fixed(&crate::dial(), HEIGHT);
         footer.end();
         page.end();
         {
@@ -95,12 +89,14 @@ impl Sandbox for Model {
         match message {
             Message::Method(value) => self.method = value,
             Message::Url(value) => self.url = value,
-            Message::Request => {
-                let url = match self.url.starts_with("https://") {
-                    true => self.url.clone(),
-                    false => String::from("https://") + &self.url,
-                };
-                let handler = thread::spawn(move || -> (bool, String) { crate::curl(url) });
+            Message::Thread => {
+                let clone = self.clone();
+                let handler = thread::spawn(move || -> (bool, String) { crate::curl(clone) });
+                while !handler.is_finished() {
+                    app::wait();
+                    app::handle_main(SPINNER).unwrap();
+                    app::sleep(0.02);
+                }
                 if let Ok((status, check)) = handler.join() {
                     self.status = match status {
                         true => "OK",
@@ -114,6 +110,46 @@ impl Sandbox for Model {
     }
 }
 
+fn curl(model: Model) -> (bool, String) {
+    let url = match model.url.starts_with("https://") {
+        true => model.url.clone(),
+        false => String::from("https://") + &model.url,
+    };
+    let run = Command::new("curl")
+        .args(["-s", &url])
+        .output()
+        .expect("failed to execute bash");
+    (
+        run.status.success(),
+        String::from_utf8_lossy(match run.status.success() {
+            true => &run.stdout,
+            false => &run.stderr,
+        })
+        .to_string(),
+    )
+}
+
+fn dial() -> Dial {
+    const MAX: u8 = 120;
+    let mut element = Dial::default();
+    // element.deactivate();
+    element.set_maximum((MAX / 4 * 3) as f64);
+    element.set_value(element.minimum());
+    element.handle(move |dial, event| {
+        if event == crate::SPINNER {
+            dial.set_value(if dial.value() == (MAX - 1) as f64 {
+                dial.minimum()
+            } else {
+                dial.value() + 1f64
+            });
+            true
+        } else {
+            false
+        }
+    });
+    element
+}
+
 fn choice(value: i32, flex: &mut Flex) -> Choice {
     let mut element = Choice::default();
     element.add_choice("GET|POST");
@@ -123,6 +159,8 @@ fn choice(value: i32, flex: &mut Flex) -> Choice {
 }
 
 fn text(value: &str) {
+    let mut buffer = TextBuffer::default();
+    buffer.set_text(&model::fill_style_buffer(value));
     let styles: Vec<StyleTableEntry> = [0xdc322f, 0x268bd2, 0x859900]
         .into_iter()
         .map(|color| StyleTableEntry {
@@ -135,7 +173,7 @@ fn text(value: &str) {
     element.wrap_mode(WrapMode::AtBounds, 0);
     element.set_buffer(TextBuffer::default());
     element.set_color(Color::from_hex(0x002b36));
-    element.set_highlight_data(TextBuffer::default(), styles);
+    element.set_highlight_data(buffer, styles);
     element.buffer().unwrap().set_text(value);
 }
 
@@ -155,21 +193,6 @@ fn input(value: &str) -> InputChoice {
     element.add(r#"https:\/\/ipinfo.io\/json"#);
     element.set_value(value);
     element
-}
-
-fn curl(url: String) -> (bool, String) {
-    let run = Command::new("curl")
-        .args(["-s", &url])
-        .output()
-        .expect("failed to execute bash");
-    (
-        run.status.success(),
-        String::from_utf8_lossy(match run.status.success() {
-            true => &run.stdout,
-            false => &run.stderr,
-        })
-        .to_string(),
-    )
 }
 
 const PAD: i32 = 10;

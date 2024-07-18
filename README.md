@@ -77,7 +77,6 @@ To run the [examples:](/examples)
 cargo run --example counter
 cargo run --example temperature
 cargo run --example crud
-cargo run --example fldialect
 cargo run --example flglyph
 cargo run --example flnetport
 cargo run --example flpicture
@@ -97,14 +96,6 @@ cargo run --example flresters
 
 ![FlCRUD](/assets/crud.png)
 
-### [FlCalculator](/examples/calculator.rs)
-
-![FlCalculator](https://github.com/fltk-rs/demos/tree/master/flcalculator/assets/flcalculator.gif)
-
-### [FlDialect](/examples/fldialect.rs)
-
-![FlDialect](/assets/fldialect.gif)
-
 ### [FlGlyph](/examples/flglyph.rs)
 
 ![FlGlyph](/assets/flglyph.png)
@@ -117,23 +108,31 @@ cargo run --example flresters
 
 ![FlPicture](/assets/flpicture.gif)
 
-### [FlResters](/examples/flresters.rs)
-
-![FlResters](/assets/flresters.png)
-
 ## Demos
 
-### [FlTodo](/demos/fltodo)
+### [FlCairo](/demos/cairo)
 
-![FlTodo](/demos/fltodo/assets/fltodo.gif)
+![FlCairo](https://github.com/fltk-rs/demos/blob/master/cairo/assets/scrot.png)
+
+### [FlCalculator](/demos/calculator)
+
+![FlCalculator](https://github.com/fltk-rs/demos/tree/master/flcalculator/assets/flcalculator.gif)
 
 ### [FlCSV](/demos/csv)
 
 ![FlCSV](https://github.com/fltk-rs/demos/blob/master/csv/assets/csv.gif)
 
-### [FlCairo](/demos/cairo)
+### [FlDialect](/demos/dialect)
 
-![FlCairo](https://github.com/fltk-rs/demos/blob/master/cairo/assets/scrot.png)
+![FlDialect](https://github.com/fltk-rs/demos/tree/master/fldialect/assets/fldialect.gif)
+
+### [FlResters](/demos/resters)
+
+![FlResters](https://github.com/fltk-rs/demos/tree/master/flresters/assets/flresters.gif)
+
+### [FlTodo](/demos/fltodo)
+
+![FlTodo](/demos/fltodo/assets/fltodo.gif)
 
 ### [Flightbooker](/demos/flightbooker)
 

@@ -13,8 +13,29 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn click(&mut self, value: String) {
-        match value.as_str() {
+    pub fn default(file: &str) -> Self {
+        let default = Self {
+            prev: 0f64,
+            operation: String::new(),
+            current: String::from("0"),
+            output: String::new(),
+            theme: false,
+        };
+        if let Ok(value) = fs::read(file) {
+            if let Ok(value) = rmp_serde::from_slice(&value) {
+                value
+            } else {
+                default
+            }
+        } else {
+            default
+        }
+    }
+    pub fn save(&mut self, file: &str) {
+        fs::write(file, rmp_serde::to_vec(&self).unwrap()).unwrap();
+    }
+    pub fn click(&mut self, value: &str) {
+        match value {
             "/" | "x" | "+" | "-" | "%" => {
                 if self.current != "0" {
                     if self.operation.is_empty() {
@@ -23,7 +44,7 @@ impl Model {
                         self.equil();
                     }
                     self.output.push_str(&format!("{} {}", self.prev, value));
-                    self.operation = value;
+                    self.operation = value.to_string();
                     self.current = String::from("0");
                 }
             }
@@ -57,7 +78,7 @@ impl Model {
                 if self.current == "0" {
                     self.current.clear();
                 }
-                self.current = self.current.clone() + &value;
+                self.current = self.current.clone() + value;
             }
         };
     }
@@ -73,26 +94,5 @@ impl Model {
         };
         self.output.push_str(&format!("    = {}\n", self.prev));
         self.current = String::from("0");
-    }
-    pub fn default(file: &str) -> Self {
-        let default = Self {
-            prev: 0f64,
-            operation: String::new(),
-            current: String::from("0"),
-            output: String::new(),
-            theme: false,
-        };
-        if let Ok(value) = fs::read(file) {
-            if let Ok(value) = rmp_serde::from_slice(&value) {
-                value
-            } else {
-                default
-            }
-        } else {
-            default
-        }
-    }
-    pub fn save(&mut self, file: &str) {
-        fs::write(file, rmp_serde::to_vec(&self).unwrap()).unwrap();
     }
 }
