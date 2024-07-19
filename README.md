@@ -110,30 +110,30 @@ cargo run --example flresters
 
 ## Demos
 
-### [FlCairo](/demos/cairo)
+### [Cairo](/demos/cairo)
 
-![FlCairo](https://github.com/fltk-rs/demos/blob/master/cairo/assets/scrot.png)
+![img](../fltk-rs/demos/blob/master/cairo/assets/scrot.png)
 
-### [FlCalculator](/demos/calculator)
+### [Calculator](/demos/calculator)
 
-![FlCalculator](https://github.com/fltk-rs/demos/tree/master/flcalculator/assets/flcalculator.gif)
+![img](../fltk-rs/demos/tree/master/flcalculator/assets/flcalculator.gif)
 
-### [FlCSV](/demos/csv)
+### [CSV](/demos/csv)
 
-![FlCSV](https://github.com/fltk-rs/demos/blob/master/csv/assets/csv.gif)
+![img](../fltk-rs/demos/blob/master/csv/assets/csv.gif)
 
-### [FlDialect](/demos/dialect)
+### [Dialect](/demos/dialect)
 
-![FlDialect](https://github.com/fltk-rs/demos/tree/master/fldialect/assets/fldialect.gif)
+![img](../fltk-rs/demos/tree/master/fldialect/assets/fldialect.gif)
 
-### [FlResters](/demos/resters)
+### [Resters](/demos/resters)
 
-![FlResters](https://github.com/fltk-rs/demos/tree/master/flresters/assets/flresters.gif)
+![img](../fltk-rs/demos/tree/master/flresters/assets/flresters.gif)
 
-### [FlTodo](/demos/fltodo)
+### [Todo](/demos/fltodo)
 
-![FlTodo](/demos/fltodo/assets/fltodo.gif)
+![img](/demos/fltodo/assets/fltodo.gif)
 
 ### [Flightbooker](/demos/flightbooker)
 
-![Flightbooker](/demos/flightbooker/assets/flightbooker.png)
+![img](/demos/flightbooker/assets/flightbooker.png)
