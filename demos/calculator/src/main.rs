@@ -143,7 +143,7 @@ impl Sandbox for Model {
         match message {
             Message::Quit => {
                 let file = app::GlobalState::<String>::get().with(move |file| file.clone());
-                fs::write(file, rmp_serde::to_vec(&self).unwrap()).unwrap();
+                std::fs::write(file, rmp_serde::to_vec(&self).unwrap()).unwrap();
                 app::quit();
             }
             Message::Theme => self.theme = !self.theme,

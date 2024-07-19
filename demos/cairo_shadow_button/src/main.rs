@@ -7,9 +7,8 @@ use {
     flemish::{
         app,
         button::Button,
-        color_themes,
-        draw,
-        enums::{Event, Align, Color, ColorDepth, Font, Shortcut},
+        color_themes, draw,
+        enums::{Align, Color, ColorDepth, Event, Font, Shortcut},
         frame::Frame,
         group::Flex,
         image::RgbImage,
@@ -60,7 +59,9 @@ impl Sandbox for Model {
         crate::cairobutton()
             .with_label("@#<")
             .on_event(move |_| Message::Dec);
-        crate::frame().with_label(&self.value()).handle(crate::popup);
+        crate::frame()
+            .with_label(&self.value())
+            .handle(crate::popup);
         crate::cairobutton()
             .with_label("@#>")
             .on_event(move |_| Message::Inc);

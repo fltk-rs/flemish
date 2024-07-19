@@ -3,12 +3,7 @@ mod model;
 use {
     cairo::Context,
     flemish::{
-        app,
-        frame::Frame,
-        color_themes,
-        enums::Color,
-        prelude::*,
-        OnEvent, Sandbox, Settings,
+        app, color_themes, enums::Color, frame::Frame, prelude::*, OnEvent, Sandbox, Settings,
     },
     model::Model,
 };

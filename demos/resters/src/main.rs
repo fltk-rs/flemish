@@ -11,7 +11,7 @@ use {
         frame::Frame,
         group::Flex,
         menu::Choice,
-        misc::{InputChoice,Progress},
+        misc::{InputChoice, Progress},
         prelude::*,
         text::{StyleTableEntry, TextBuffer, TextDisplay, WrapMode},
         OnEvent, Sandbox, Settings,
