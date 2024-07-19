@@ -6,6 +6,7 @@ members = [
     "cairo_shadow_button",
     "calculator",
     "csv",
+    "dialect",
     "fltodo",
     "flightbooker",
     "resters",

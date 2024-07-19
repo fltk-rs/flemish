@@ -7,21 +7,18 @@ use {
         app,
         button::Button,
         color_themes,
-        enums::{Align, Color, Event, Font, FrameType},
+        enums::{Color, Event, Font, FrameType},
         frame::Frame,
-        misc::InputChoice,
         group::Flex,
         menu::Choice,
+        misc::{InputChoice,Progress},
         prelude::*,
         text::{StyleTableEntry, TextBuffer, TextDisplay, WrapMode},
         OnEvent, Sandbox, Settings,
-        valuator::Dial,
     },
-    std::{process::Command, thread},
+    json_tools::{Buffer, BufferType, Lexer, Span, TokenType},
     model::Model,
 };
-
-const SPINNER: Event = Event::from_i32(405);
 
 fn main() {
     Model::new().run(Settings {
@@ -49,14 +46,15 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        String::from("flResters")
+        String::from("FlResters")
     }
 
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
         let mut header = Flex::default();
         header.fixed(&Frame::default(), WIDTH);
-        crate::choice(self.method as i32, &mut header).with_label("Method: ")
+        crate::choice(self.method as i32, &mut header)
+            .with_label("Method: ")
             .on_event(move |choice| Message::Method(choice.value() as u8));
         header.fixed(&Frame::default(), WIDTH);
         crate::input(&self.url).on_event(move |input| Message::Url(input.value().unwrap()));
@@ -66,13 +64,7 @@ impl Sandbox for Model {
         let mut footer = Flex::default();
         footer.fixed(&Frame::default().with_label("Status: "), WIDTH);
         Frame::default();
-        footer.fixed(
-            &Frame::default()
-                .with_align(Align::Left | Align::Inside)
-                .with_label(&self.status),
-            WIDTH,
-        );
-        footer.fixed(&crate::dial(), HEIGHT);
+        footer.fixed(&crate::progress().with_label(&self.status), WIDTH);
         footer.end();
         page.end();
         {
@@ -91,7 +83,7 @@ impl Sandbox for Model {
             Message::Url(value) => self.url = value,
             Message::Thread => {
                 let clone = self.clone();
-                let handler = thread::spawn(move || -> (bool, String) { crate::curl(clone) });
+                let handler = std::thread::spawn(move || -> (bool, String) { crate::curl(clone) });
                 while !handler.is_finished() {
                     app::wait();
                     app::handle_main(SPINNER).unwrap();
@@ -115,32 +107,30 @@ fn curl(model: Model) -> (bool, String) {
         true => model.url.clone(),
         false => String::from("https://") + &model.url,
     };
-    let run = Command::new("curl")
-        .args(["-s", &url])
-        .output()
-        .expect("failed to execute bash");
-    (
-        run.status.success(),
-        String::from_utf8_lossy(match run.status.success() {
-            true => &run.stdout,
-            false => &run.stderr,
-        })
-        .to_string(),
-    )
+    if let Ok(response) = match model.method {
+        0 => ureq::get(&url),
+        1 => ureq::post(&url),
+        _ => unreachable!(),
+    }
+    .call()
+    {
+        (true, response.into_string().unwrap())
+    } else {
+        (false, String::from("Error"))
+    }
 }
 
-fn dial() -> Dial {
+fn progress() -> Progress {
     const MAX: u8 = 120;
-    let mut element = Dial::default();
-    // element.deactivate();
+    let mut element = Progress::default();
     element.set_maximum((MAX / 4 * 3) as f64);
     element.set_value(element.minimum());
-    element.handle(move |dial, event| {
+    element.handle(move |progress, event| {
         if event == crate::SPINNER {
-            dial.set_value(if dial.value() == (MAX - 1) as f64 {
-                dial.minimum()
+            progress.set_value(if progress.value() == (MAX - 1) as f64 {
+                progress.minimum()
             } else {
-                dial.value() + 1f64
+                progress.value() + 1f64
             });
             true
         } else {
@@ -160,7 +150,7 @@ fn choice(value: i32, flex: &mut Flex) -> Choice {
 
 fn text(value: &str) {
     let mut buffer = TextBuffer::default();
-    buffer.set_text(&model::fill_style_buffer(value));
+    buffer.set_text(&crate::fill_style_buffer(value));
     let styles: Vec<StyleTableEntry> = [0xdc322f, 0x268bd2, 0x859900]
         .into_iter()
         .map(|color| StyleTableEntry {
@@ -189,12 +179,37 @@ fn input(value: &str) -> InputChoice {
     for item in ["users", "posts", "albums", "todos", "comments", "posts"] {
         element.add(&(format!(r#"https:\/\/jsonplaceholder.typicode.com\/{item}"#)));
     }
-    element.add(r#"https:\/\/lingva.ml\/api\/v1\/languages"#);
+    element.add(r#"https:\/\/lingva.thedaviddelta.com\/api\/v1\/languages"#);
     element.add(r#"https:\/\/ipinfo.io\/json"#);
     element.set_value(value);
     element
 }
 
+pub fn fill_style_buffer(s: &str) -> String {
+    let mut buffer = vec![b'A'; s.len()];
+    for token in Lexer::new(s.bytes(), BufferType::Span) {
+        let c = match token.kind {
+            TokenType::CurlyOpen
+            | TokenType::CurlyClose
+            | TokenType::BracketOpen
+            | TokenType::BracketClose
+            | TokenType::Colon
+            | TokenType::Comma
+            | TokenType::Invalid => 'A',
+            TokenType::String => 'B',
+            TokenType::BooleanTrue | TokenType::BooleanFalse | TokenType::Null => 'C',
+            TokenType::Number => 'D',
+        };
+        if let Buffer::Span(Span { first, end }) = token.buf {
+            let start = first as _;
+            let last = end as _;
+            buffer[start..last].copy_from_slice(c.to_string().repeat(last - start).as_bytes());
+        }
+    }
+    String::from_utf8_lossy(&buffer).to_string()
+}
+
+const SPINNER: Event = Event::from_i32(405);
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
 const WIDTH: i32 = HEIGHT * 3;
