@@ -112,23 +112,23 @@ cargo run --example flresters
 
 ### [Cairo](/demos/cairo)
 
-![img](../fltk-rs/demos/blob/master/cairo/assets/scrot.png)
+![img](../fltk-rs/demos/blob/main/cairo/assets/scrot.png)
 
 ### [Calculator](/demos/calculator)
 
-![img](../fltk-rs/demos/tree/master/flcalculator/assets/flcalculator.gif)
+![img](../fltk-rs/demos/tree/main/flcalculator/assets/flcalculator.gif)
 
 ### [CSV](/demos/csv)
 
-![img](../fltk-rs/demos/blob/master/csv/assets/csv.gif)
+![img](../fltk-rs/demos/blob/main/csv/assets/csv.gif)
 
 ### [Dialect](/demos/dialect)
 
-![img](../fltk-rs/demos/tree/master/fldialect/assets/fldialect.gif)
+![img](../fltk-rs/demos/tree/main/fldialect/assets/fldialect.gif)
 
 ### [Resters](/demos/resters)
 
-![img](../fltk-rs/demos/tree/master/flresters/assets/flresters.gif)
+![img](../fltk-rs/demos/tree/main/flresters/assets/flresters.gif)
 
 ### [Todo](/demos/fltodo)
 
