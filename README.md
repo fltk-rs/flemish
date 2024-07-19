@@ -80,55 +80,54 @@ cargo run --example crud
 cargo run --example flglyph
 cargo run --example flnetport
 cargo run --example flpicture
-cargo run --example flresters
 ...
 ```
 
-### [FlCounter](/examples/counter.rs)
+### [Counter](/examples/counter.rs)
 
-![FlCounter](/assets/counter.png)
+![img](/assets/counter.png)
 
-### [FlTemperature](/examples/temperature.rs)
+### [Temperature](/examples/temperature.rs)
 
-![FlTemperature](/assets/temperature.png)
+![img](/assets/temperature.png)
 
-### [FlCRUD](/examples/crud.rs)
+### [CRUD](/examples/crud.rs)
 
-![FlCRUD](/assets/crud.png)
+![img](/assets/crud.png)
 
-### [FlGlyph](/examples/flglyph.rs)
+### [Glyph](/examples/flglyph.rs)
 
-![FlGlyph](/assets/flglyph.png)
+![img](/assets/flglyph.png)
 
-### [FlNetPort](/examples/flnetport.rs)
+### [NetPort](/examples/flnetport.rs)
 
-![FlNetPort](/assets/flnetport.png)
+![img](/assets/flnetport.png)
 
-### [FlPicture](/examples/flpicture.rs)
+### [Picture](/examples/flpicture.rs)
 
-![FlPicture](/assets/flpicture.gif)
+![img](/assets/flpicture.gif)
 
 ## Demos
 
 ### [Cairo](/demos/cairo)
 
-![img](../fltk-rs/demos/blob/main/cairo/assets/scrot.png)
+![img](../demos/blob/master/cairo/assets/scrot.png)
 
 ### [Calculator](/demos/calculator)
 
-![img](../fltk-rs/demos/tree/main/flcalculator/assets/flcalculator.gif)
+![img](../demos/blob/master/flcalculator/assets/flcalculator.gif)
 
 ### [CSV](/demos/csv)
 
-![img](../fltk-rs/demos/blob/main/csv/assets/csv.gif)
+![img](../demos/blob/master/csv/assets/csv.gif)
 
 ### [Dialect](/demos/dialect)
 
-![img](../fltk-rs/demos/tree/main/fldialect/assets/fldialect.gif)
+![img](../demos/blob/master/fldialect/assets/fldialect.gif)
 
 ### [Resters](/demos/resters)
 
-![img](../fltk-rs/demos/tree/main/flresters/assets/flresters.gif)
+![img](../demos/blob/master/flresters/assets/flresters.gif)
 
 ### [Todo](/demos/fltodo)
 
