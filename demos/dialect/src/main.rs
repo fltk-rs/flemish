@@ -272,28 +272,24 @@ fn textdisplay(tooltip: &str, value: &str, font: i32, size: i32) {
 fn menu(flex: &mut Flex) {
     let element = MenuButton::default();
     element
-        .clone()
         .on_item_event(
             "@#fileopen  &Open...",
             Shortcut::Ctrl | 'o',
             MenuFlag::Normal,
             move |_| Message::Open,
         )
-        .clone()
         .on_item_event(
             "@#filesaveas  &Save as...",
             Shortcut::Ctrl | 's',
             MenuFlag::Normal,
             move |_| Message::Save,
         )
-        .clone()
         .on_item_event(
             "@#circle  T&ranslate",
             Shortcut::Ctrl | 'r',
             MenuFlag::Normal,
             move |_| Message::Translate,
         )
-        .clone()
         .on_item_event(
             "@#search  &Info",
             Shortcut::Ctrl | 'i',

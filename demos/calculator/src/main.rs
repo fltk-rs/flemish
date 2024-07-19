@@ -220,7 +220,6 @@ pub fn menu(theme: usize) -> MenuButton {
     element.set_color(COLORS[theme][1]);
     element.set_text_color(COLORS[theme][0]);
     element
-        .clone()
         .on_item_event(
             "&Night mode\t",
             Shortcut::Ctrl | 'n',
