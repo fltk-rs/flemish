@@ -55,8 +55,8 @@ impl Model {
             to: 0,
             font: 1,
             size: 14,
-            source: String::new(),
-            target: String::new(),
+            source: String::from("Source"),
+            target: String::from("Target"),
             lang: Lang::init(),
         };
         if let Ok(value) = fs::read(file) {
@@ -77,5 +77,11 @@ impl Model {
     }
     pub fn save(&mut self, file: &str) {
         fs::write(file, rmp_serde::to_vec(&self).unwrap()).unwrap();
+    }
+    pub fn open(&mut self, file: &str) {
+        self.source = fs::read_to_string(file).unwrap();
+    }
+    pub fn target(&mut self, file: &str) {
+        fs::write(file, self.target.as_bytes()).unwrap();
     }
 }

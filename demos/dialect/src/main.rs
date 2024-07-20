@@ -19,7 +19,7 @@ use {
         OnEvent, OnMenuEvent, Sandbox, Settings,
     },
     model::Model,
-    std::{env, fs, path::Path, process::Command, thread},
+    std::{env, process::Command, thread},
 };
 
 const SPINNER: Event = Event::from_i32(405);
@@ -30,7 +30,7 @@ const WIDTH: i32 = 105;
 
 fn main() {
     if crate::once() {
-        app::GlobalState::<String>::new(env::var("HOME").unwrap() + "/.config" + NAME);
+        app::GlobalState::<String>::new(env::var("HOME").unwrap() + "/.config/" + NAME);
         Model::new().run(Settings {
             ignore_esc_close: true,
             resizable: true,
@@ -45,14 +45,14 @@ fn main() {
 
 #[derive(Clone)]
 pub enum Message {
-    Switch,
     From(i32),
     To(i32),
-    Source(String),
     Size(i32),
     Font(i32),
     Page(i32),
-    Translate,
+    Source(String),
+    Switch,
+    Click,
     Open,
     Save,
     Quit,
@@ -104,7 +104,7 @@ impl Sandbox for Model {
                     );
                     Frame::default();
                     crate::button("Translate", "@#circle", &mut header)
-                        .on_event(move |_| Message::Translate);
+                        .on_event(move |_| Message::Click);
                 }
                 header.end();
                 header.set_pad(PAD);
@@ -190,7 +190,7 @@ impl Sandbox for Model {
                 }
                 if dialog.count() > 0 {
                     if let Some(file) = dialog.value(1) {
-                        self.source = fs::read_to_string(Path::new(&file)).unwrap();
+                        self.open(&file);
                     };
                 };
             }
@@ -208,14 +208,14 @@ impl Sandbox for Model {
                     }
                     if dialog.count() > 0 {
                         if let Some(file) = dialog.value(1) {
-                            fs::write(file, self.target.as_bytes()).unwrap();
+                            self.target(&file)
                         };
                     };
                 } else {
                     alert_default("Target is empty.");
                 };
             }
-            Message::Translate => {
+            Message::Click => {
                 let clone = self.clone();
                 if clone.from != clone.to && !clone.source.is_empty() {
                     let handler = thread::spawn(move || -> String { clone.click() });
@@ -361,7 +361,7 @@ fn menu(flex: &mut Flex) {
             "@#circle  T&ranslate",
             Shortcut::Ctrl | 'r',
             MenuFlag::Normal,
-            move |_| Message::Translate,
+            move |_| Message::Click,
         )
         .on_item_event(
             "@#search  &Info",
