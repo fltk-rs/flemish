@@ -14,7 +14,9 @@ impl Lang {
         if let Ok(response) = ureq::get(&format!("{}languages", Self::LINGVA)).call() {
             response.into_json::<Self>().unwrap().languages
         } else {
-            Vec::new()
+            Vec::from([
+                HashMap::from([(String::from("name"), String::from("Not connect"))])
+            ])
         }
     }
     fn tran(source: String, target: String, query: String) -> String {
@@ -59,9 +61,13 @@ impl Model {
             target: String::from("Target"),
             lang: Lang::init(),
         };
-        if let Ok(value) = fs::read(file) {
-            if let Ok(value) = rmp_serde::from_slice(&value) {
-                value
+        if default.lang.len() > 0 {
+            if let Ok(value) = fs::read(file) {
+                if let Ok(value) = rmp_serde::from_slice(&value) {
+                    value
+                } else {
+                    default
+                }
             } else {
                 default
             }
