@@ -56,6 +56,13 @@ jobs:
         if [[ ${RUNNER_OS} == "Linux" ]]; then
             cargo build --quiet || cargo build --verbose
         fi
+    - name: Build base64
+      working-directory: demos/base64
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
     - name: Build cairo_shadow_button
       working-directory: demos/cairo_shadow_button
       shell: bash
@@ -72,6 +79,34 @@ jobs:
         fi
     - name: Build csv
       working-directory: demos/csv
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
+    - name: Build dialect
+      working-directory: demos/dialect
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
+    - name: Build flightbooker
+      working-directory: demos/flightbooker
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
+    - name: Build resters
+      working-directory: demos/resters
+      shell: bash
+      run: |
+        if [[ ${RUNNER_OS} == "Linux" ]]; then
+            cargo build --quiet || cargo build --verbose
+        fi
+    - name: Build sudokusolver
+      working-directory: demos/sudokusolver
       shell: bash
       run: |
         if [[ ${RUNNER_OS} == "Linux" ]]; then
