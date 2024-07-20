@@ -272,6 +272,7 @@ fn textdisplay(tooltip: &str, value: &str, font: i32, size: i32) {
 fn menu(flex: &mut Flex) {
     let element = MenuButton::default();
     element
+        .clone()
         .on_item_event(
             "@#fileopen  &Open...",
             Shortcut::Ctrl | 'o',

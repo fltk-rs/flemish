@@ -71,8 +71,12 @@ impl Sandbox for Model {
         hero.set_pad(0);
         let mut footer = Flex::default();
         {
-            Button::default().with_label("Solve").on_event(move |_| Message::Solve);
-            Button::default().with_label("Clear").on_event(move |_| Message::Clear);
+            Button::default()
+                .with_label("Solve")
+                .on_event(move |_| Message::Solve);
+            Button::default()
+                .with_label("Clear")
+                .on_event(move |_| Message::Clear);
         }
         footer.end();
         footer.set_pad(PAD);
@@ -98,25 +102,20 @@ fn frame(row: usize, col: usize, value: i32) -> Frame {
     };
     element.set_frame(FrameType::DownBox);
     element.set_label_size(18);
-    element.handle(move |_, event| {
-        match event {
-            Event::Push => match app::event_mouse_button() {
-                app::MouseButton::Right => {
-                    let mut menu = MenuButton::default()
-                        .with_type(MenuButtonType::Popup3);
-                    menu.set_text_size(18);
-                    menu.add_choice("  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  ");
-                    menu
-                        .clone()
-                        .on_event(move |choice| {
-                            Message::Click((row, col, choice.value() + 1))
-                        }).popup();
-                    true
-                }
-                _ => false,
-            },
+    element.handle(move |_, event| match event {
+        Event::Push => match app::event_mouse_button() {
+            app::MouseButton::Right => {
+                let mut menu = MenuButton::default().with_type(MenuButtonType::Popup3);
+                menu.set_text_size(18);
+                menu.add_choice("  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  ");
+                menu.clone()
+                    .on_event(move |choice| Message::Click((row, col, choice.value() + 1)))
+                    .popup();
+                true
+            }
             _ => false,
-        }
+        },
+        _ => false,
     });
     element
 }

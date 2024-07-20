@@ -41,7 +41,7 @@ impl Model {
                 items = [0; 9];
                 for i in 0..3 {
                     for j in 0..3 {
-                        if self.grid[y + i][x + j] > 0 && self.grid[y + i][x + j]  < 10 {
+                        if self.grid[y + i][x + j] > 0 && self.grid[y + i][x + j] < 10 {
                             items[(self.grid[y + i][x + j] - 1) as usize] += 1;
                         }
                     }
