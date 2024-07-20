@@ -35,6 +35,8 @@ impl Lang {
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct Model {
+    pub page: i32,
+    pub hero: bool,
     pub from: i32,
     pub to: i32,
     pub font: i32,
@@ -47,6 +49,8 @@ pub struct Model {
 impl Model {
     pub fn default(file: &str) -> Self {
         let default = Self {
+            hero: true,
+            page: 0,
             from: 0,
             to: 0,
             font: 1,

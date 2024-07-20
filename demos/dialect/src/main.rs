@@ -7,11 +7,12 @@ use {
         app,
         button::Button,
         color_themes,
-        dialog::{alert_default, FileChooser, FileChooserType, HelpDialog},
-        enums::{Color, Event, Font, FrameType, Shortcut},
+        dialog::{alert_default, FileChooser, FileChooserType},
+        enums::{Align, Color, Event, Font, FrameType, Shortcut},
         frame::Frame,
-        group::Flex,
-        menu::{Choice, MenuButton, MenuFlag},
+        group::{Flex, FlexType, Wizard},
+        menu::{Choice, MenuButton, MenuButtonType, MenuFlag},
+        misc::HelpView,
         prelude::*,
         text::{TextBuffer, TextDisplay, TextEditor, WrapMode},
         valuator::{Counter, CounterType},
@@ -21,13 +22,20 @@ use {
     std::{env, fs, path::Path, process::Command, thread},
 };
 
+const SPINNER: Event = Event::from_i32(405);
+const NAME: &str = "FlDialect";
+const PAD: i32 = 10;
+const HEIGHT: i32 = PAD * 3;
+const WIDTH: i32 = 105;
+
 fn main() {
     if crate::once() {
         app::GlobalState::<String>::new(env::var("HOME").unwrap() + "/.config" + NAME);
         Model::new().run(Settings {
             ignore_esc_close: true,
-            resizable: false,
+            resizable: true,
             size: (360, 640),
+            size_range: Some((360, 640, 0, 0)),
             color_map: Some(color_themes::DARK_THEME),
             scheme: Some(app::Scheme::Base),
             ..Default::default()
@@ -43,8 +51,8 @@ pub enum Message {
     Source(String),
     Size(i32),
     Font(i32),
+    Page(i32),
     Translate,
-    Info,
     Open,
     Save,
     Quit,
@@ -66,58 +74,98 @@ impl Sandbox for Model {
     }
 
     fn view(&mut self) {
-        let mut page = Flex::default_fill().column();
+        let mut wizard = Wizard::default_fill();
         {
-            let mut header = Flex::default();
-            crate::menu(&mut header);
-            Frame::default();
-            let lang = self
-                .lang
-                .iter()
-                .map(|x| x["name"].clone())
-                .collect::<Vec<String>>()
-                .join("|");
-            crate::choice("From", &lang, self.from, &mut header)
-                .on_event(move |choice| Message::From(choice.value()));
-            crate::button("Switch", "@#refresh", &mut header).on_event(move |_| Message::Switch);
-            crate::choice("To", &lang, self.to, &mut header)
-                .on_event(move |choice| Message::To(choice.value()));
-            Frame::default();
-            crate::button("Translate", "@#circle", &mut header)
-                .on_event(move |_| Message::Translate);
-            header.end();
-            header.set_pad(0);
-            page.fixed(&header, HEIGHT);
+            let mut page = Flex::default_fill().column();
+            {
+                let mut header = Flex::default();
+                {
+                    crate::menu(&mut header);
+                    Frame::default();
+                    let lang = self
+                        .lang
+                        .iter()
+                        .map(|x| x["name"].clone())
+                        .collect::<Vec<String>>()
+                        .join("|");
+                    header.fixed(
+                        &crate::choice("From", &lang, self.from)
+                            .clone()
+                            .on_event(move |choice| Message::From(choice.value())),
+                        WIDTH,
+                    );
+                    crate::button("Switch", "@#refresh", &mut header)
+                        .on_event(move |_| Message::Switch);
+                    header.fixed(
+                        &crate::choice("To", &lang, self.to)
+                            .clone()
+                            .on_event(move |choice| Message::To(choice.value())),
+                        WIDTH,
+                    );
+                    Frame::default();
+                    crate::button("Translate", "@#circle", &mut header)
+                        .on_event(move |_| Message::Translate);
+                }
+                header.end();
+                header.set_pad(PAD);
+                page.fixed(&header, HEIGHT);
+                let mut hero = Flex::default_fill();
+                {
+                    crate::texteditor("Source", &self.source, self.font, self.size)
+                        .on_event(move |text| Message::Source(text.buffer().unwrap().text()));
+                    Frame::default();
+                    crate::textdisplay("Target", &self.target, self.font, self.size);
+                }
+                hero.end();
+                hero.set_pad(0);
+                crate::orientation(&mut hero);
+                hero.handle(crate::resize);
+            }
+            page.end();
+            page.set_pad(PAD);
+            page.set_margin(PAD);
+            page.set_frame(FrameType::FlatBox);
+            let mut page = Flex::default_fill();
+            {
+                crate::info();
+            }
+            page.end();
+            page.set_margin(PAD);
+            page.handle(crate::back);
+            let mut page = Flex::default_fill();
+            {
+                Frame::default();
+                let mut right = Flex::default_fill().column();
+                {
+                    right.fixed(
+                        &crate::choice("Font", &app::fonts().join("|"), self.font)
+                            .with_label("Font")
+                            .clone()
+                            .on_event(move |choice| Message::Font(choice.value())),
+                        HEIGHT,
+                    );
+                    right.fixed(
+                        &crate::counter("Size", self.size as f64)
+                            .with_label("Size")
+                            .clone()
+                            .on_event(move |counter| Message::Size(counter.value() as i32)),
+                        HEIGHT,
+                    );
+                }
+                right.end();
+                right.set_pad(PAD);
+            }
+            page.end();
+            page.set_margin(PAD);
+            page.handle(crate::back);
         }
-        {
-            let mut hero = Flex::default_fill().column();
-            crate::texteditor("Source", &self.source, self.font, self.size)
-                .on_event(move |text| Message::Source(text.buffer().unwrap().text()));
-            hero.fixed(&Frame::default(), PAD);
-            crate::textdisplay("Target", &self.target, self.font, self.size);
-            hero.end();
-            hero.set_pad(0);
-        }
-        {
-            let mut footer = Flex::default(); //FOOTER
-            crate::choice("Font", &app::fonts().join("|"), self.font, &mut footer)
-                .on_event(move |choice| Message::Font(choice.value()));
-            Frame::default();
-            crate::counter("Size", self.size as f64, &mut footer)
-                .with_type(CounterType::Simple)
-                .on_event(move |counter| Message::Size(counter.value() as i32));
-            footer.end();
-            footer.set_pad(0);
-            page.fixed(&footer, HEIGHT);
-        }
-        page.end();
-        page.set_margin(PAD);
-        page.set_pad(PAD);
-        page.set_frame(FrameType::FlatBox);
+        wizard.end();
+        wizard.set_current_widget(&wizard.child(self.page).unwrap());
     }
 
     fn update(&mut self, message: Message) {
         match message {
+            Message::Page(value) => self.page = value,
             Message::Quit => {
                 let file = app::GlobalState::<String>::get().with(move |file| file.clone());
                 self.save(&file);
@@ -129,7 +177,6 @@ impl Sandbox for Model {
             Message::Switch => std::mem::swap(&mut self.from, &mut self.to),
             Message::Font(value) => self.font = value,
             Message::Size(value) => self.size = value,
-            Message::Info => crate::info(),
             Message::Open => {
                 let mut dialog = FileChooser::new(
                     env::var("HOME").unwrap(),
@@ -194,42 +241,67 @@ fn button(tooltip: &str, label: &str, flex: &mut Flex) -> Button {
     element
 }
 
-fn counter(tooltip: &str, value: f64, flex: &mut Flex) -> Counter {
-    let mut element = Counter::default();
+fn counter(tooltip: &str, value: f64) -> Counter {
+    let mut element = Counter::default()
+        .with_type(CounterType::Simple)
+        .with_align(Align::Left);
     element.set_tooltip(tooltip);
     element.set_range(14_f64, 22_f64);
     element.set_precision(0);
     element.set_value(value);
-    flex.fixed(&element, WIDTH - HEIGHT);
     element
 }
 
 fn info() {
-    const INFO: &str = r#"<p style="color:gray;">
-<a href="https://github.com/fltk-rs/demos/tree/master/fldialect">FlDialect</a>
- is similar to
- <a href="https://apps.gnome.org/Dialect">Dialect</a>
- written using
- <a href="https://fltk-rs.github.io/fltk-rs">FLTK-RS</a>
-</p>"#;
     let (r, g, b) = Color::from_hex(0x2aa198).to_rgb();
     app::set_color(Color::Blue, r, g, b);
-    let mut dialog = HelpDialog::default();
-    dialog.set_value(INFO);
-    dialog.set_text_size(16);
-    dialog.show();
-    while dialog.shown() {
-        app::wait();
+    let mut help = HelpView::default();
+    help.set_value(include_str!("../README.md"));
+    help.set_text_size(16);
+}
+
+fn back(_: &mut Flex, event: Event) -> bool {
+    match event {
+        Event::Push => match app::event_mouse_button() {
+            app::MouseButton::Right => {
+                MenuButton::default()
+                    .with_type(MenuButtonType::Popup3)
+                    .clone()
+                    .on_item_event("@<-", Shortcut::None, MenuFlag::Normal, move |_| {
+                        Message::Page(0)
+                    })
+                    .popup();
+                true
+            }
+            _ => false,
+        },
+        _ => false,
     }
 }
 
-fn choice(tooltip: &str, choice: &str, value: i32, flex: &mut Flex) -> Choice {
+fn choice(tooltip: &str, choice: &str, value: i32) -> Choice {
     let mut element = Choice::default();
     element.set_tooltip(tooltip);
     element.add_choice(choice);
     element.set_value(value);
-    flex.fixed(&element, WIDTH);
     element
+}
+
+fn resize(flex: &mut Flex, event: Event) -> bool {
+    if event == Event::Resize {
+        crate::orientation(flex);
+        true
+    } else {
+        false
+    }
+}
+
+fn orientation(flex: &mut Flex) {
+    flex.set_type(match flex.width() < flex.height() {
+        true => FlexType::Column,
+        false => FlexType::Row,
+    });
+    flex.fixed(&flex.child(1).unwrap(), PAD);
 }
 
 fn texteditor(tooltip: &str, value: &str, font: i32, size: i32) -> TextEditor {
@@ -295,7 +367,13 @@ fn menu(flex: &mut Flex) {
             "@#search  &Info",
             Shortcut::Ctrl | 'i',
             MenuFlag::Normal,
-            move |_| Message::Info,
+            move |_| Message::Page(1),
+        )
+        .on_item_event(
+            "@#menu  Se&ttings",
+            Shortcut::Ctrl | 't',
+            MenuFlag::Normal,
+            move |_| Message::Page(2),
         )
         .on_item_event(
             "@#1+  &Quit",
@@ -325,9 +403,3 @@ pub fn once() -> bool {
         true
     }
 }
-
-const SPINNER: Event = Event::from_i32(405);
-const NAME: &str = "FlDialect";
-const PAD: i32 = 10;
-const HEIGHT: i32 = PAD * 3;
-const WIDTH: i32 = 125;

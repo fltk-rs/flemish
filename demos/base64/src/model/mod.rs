@@ -11,8 +11,8 @@ pub struct Model {
 impl Model {
     pub fn default() -> Self {
         Self {
-            decode: String::new(),
-            encode: String::new(),
+            decode: String::from("Normal text"),
+            encode: String::from("Base64 text"),
             font: 0,
             size: 14,
         }

@@ -5,9 +5,9 @@ use {
         app,
         button::Button,
         color_themes,
-        enums::{Color, Font},
+        enums::{Color, Event, Font},
         frame::Frame,
-        group::Flex,
+        group::{Flex, FlexType},
         prelude::*,
         text::{TextBuffer, TextEditor, WrapMode},
         OnEvent, Sandbox, Settings,
@@ -28,9 +28,9 @@ pub enum Message {
 
 fn main() {
     Model::new().run(Settings {
-        size: (640, 360),
+        size: (360, 640),
         ignore_esc_close: true,
-        resizable: false,
+        resizable: true,
         color_map: Some(color_themes::DARK_THEME),
         scheme: Some(app::Scheme::Base),
         ..Default::default()
@@ -51,16 +51,18 @@ impl Sandbox for Model {
     fn view(&mut self) {
         let mut page = Flex::default_fill().column();
         {
-            page.fixed(&Frame::default(), HEIGHT);
-            let mut hero = Flex::default();
+            let mut hero = Flex::default_fill();
             {
                 crate::texteditor("Normal text", &self.decode, self.font, self.size)
                     .on_event(move |text| Message::Source(text.buffer().unwrap().text()));
+                Frame::default();
                 crate::texteditor("Base64 text", &self.encode, self.font, self.size)
                     .on_event(move |text| Message::Target(text.buffer().unwrap().text()));
             }
             hero.end();
-            hero.set_pad(PAD);
+            hero.set_pad(0);
+            crate::orientation(&mut hero);
+            hero.handle(crate::resize);
             let mut footer = Flex::default();
             {
                 crate::button("Decode", "@<-", &mut footer).on_event(move |_| Message::Decode);
@@ -86,7 +88,7 @@ impl Sandbox for Model {
 }
 
 fn texteditor(tooltip: &str, value: &str, font: i32, size: i32) -> TextEditor {
-    let mut element = TextEditor::default().with_label(tooltip);
+    let mut element = TextEditor::default();
     element.set_tooltip(tooltip);
     element.set_linenumber_width(0);
     element.set_buffer(TextBuffer::default());
@@ -105,4 +107,21 @@ fn button(tooltip: &str, label: &str, flex: &mut Flex) -> Button {
     element.set_label_size(HEIGHT / 2);
     flex.fixed(&element, HEIGHT);
     element
+}
+
+fn resize(flex: &mut Flex, event: Event) -> bool {
+    if event == Event::Resize {
+        crate::orientation(flex);
+        flex.fixed(&flex.child(1).unwrap(), PAD);
+        true
+    } else {
+        false
+    }
+}
+
+fn orientation(flex: &mut Flex) {
+    flex.set_type(match flex.width() < flex.height() {
+        true => FlexType::Column,
+        false => FlexType::Row,
+    });
 }
