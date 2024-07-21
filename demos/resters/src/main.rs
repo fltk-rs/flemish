@@ -22,9 +22,10 @@ use {
 
 fn main() {
     Model::new().run(Settings {
-        size: (640, 360),
-        resizable: false,
         ignore_esc_close: true,
+        resizable: true,
+        size: (640, 360),
+        size_range: Some((640, 360, 0, 0)),
         color_map: Some(color_themes::DARK_THEME),
         scheme: Some(app::Scheme::Base),
         ..Default::default()
@@ -83,7 +84,7 @@ impl Sandbox for Model {
             Message::Url(value) => self.url = value,
             Message::Thread => {
                 let clone = self.clone();
-                let handler = std::thread::spawn(move || -> (bool, String) { crate::curl(clone) });
+                let handler = std::thread::spawn(move || -> (bool, String) { clone.click() });
                 while !handler.is_finished() {
                     app::wait();
                     app::handle_main(SPINNER).unwrap();
@@ -99,24 +100,6 @@ impl Sandbox for Model {
                 }
             }
         }
-    }
-}
-
-fn curl(model: Model) -> (bool, String) {
-    let url = match model.url.starts_with("https://") {
-        true => model.url.clone(),
-        false => String::from("https://") + &model.url,
-    };
-    if let Ok(response) = match model.method {
-        0 => ureq::get(&url),
-        1 => ureq::post(&url),
-        _ => unreachable!(),
-    }
-    .call()
-    {
-        (true, response.into_string().unwrap())
-    } else {
-        (false, String::from("Error"))
     }
 }
 
@@ -180,6 +163,7 @@ fn input(value: &str) -> InputChoice {
         element.add(&(format!(r#"https:\/\/jsonplaceholder.typicode.com\/{item}"#)));
     }
     element.add(r#"https:\/\/lingva.thedaviddelta.com\/api\/v1\/languages"#);
+    element.add(r#"https:\/\/lingva.thedaviddelta.com\/api\/v1\/en\/de\/mother"#);
     element.add(r#"https:\/\/ipinfo.io\/json"#);
     element.set_value(value);
     element

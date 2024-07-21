@@ -28,9 +28,10 @@ pub enum Message {
 
 fn main() {
     Model::new().run(Settings {
-        size: (360, 640),
         ignore_esc_close: true,
         resizable: true,
+        size: (360, 640),
+        size_range: Some((360, 640, 0, 0)),
         color_map: Some(color_themes::DARK_THEME),
         scheme: Some(app::Scheme::Base),
         ..Default::default()
