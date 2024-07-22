@@ -3,7 +3,7 @@ mod model;
 use {
     cairo::Context,
     flemish::{
-        app, color_themes, enums::Color, frame::Frame, prelude::*, OnEvent, Sandbox, Settings,
+        app, color_themes, enums::{Color, Event}, frame::Frame, prelude::*, OnEvent, Sandbox, Settings,
     },
     model::Model,
 };
@@ -43,25 +43,37 @@ impl Sandbox for Model {
             true => Color::Red,
             false => Color::DarkRed,
         });
+        frame.handle(crate::proxy);
         frame.on_event(move |_| Message::Change(0));
         let mut frame = cairowidget(80, 80, 100, 100, "Box2");
         frame.set_color(match self.state[1] {
             true => Color::Yellow,
             false => Color::DarkYellow,
         });
+        frame.handle(crate::proxy);
         frame.on_event(move |_| Message::Change(1));
         let mut frame = cairowidget(155, 155, 100, 100, "Box3");
         frame.set_color(match self.state[2] {
             true => Color::Green,
             false => Color::DarkGreen,
         });
-        frame.clone().on_event(move |_| Message::Change(2));
+        frame.handle(crate::proxy);
+        frame.on_event(move |_| Message::Change(2));
     }
 
     fn update(&mut self, message: Message) {
         match message {
             Message::Change(idx) => self.change(idx),
         }
+    }
+}
+
+fn proxy(frame: &mut Frame, event: Event) -> bool {
+    if event == Event::Released {
+        frame.do_callback();
+        true
+    } else {
+        false
     }
 }
 
