@@ -8,8 +8,9 @@ members = [
     "calculator",
     "csv",
     "dialect",
-    "fltodo",
     "flightbooker",
+    "fltodo",
+    "picture",
     "resters",
     "sudokusolver",
 ]

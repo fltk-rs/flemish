@@ -84,7 +84,6 @@ impl Sandbox for Model {
 fn menu() -> MenuButton {
     MenuButton::default()
         .with_type(MenuButtonType::Popup3)
-        .with_label("@#menu")
         .on_item_event(
             "@#+  &Increment",
             Shortcut::Ctrl | 'i',

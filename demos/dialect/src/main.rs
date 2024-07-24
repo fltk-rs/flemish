@@ -8,7 +8,7 @@ use {
         button::Button,
         color_themes,
         dialog::{alert_default, FileChooser, FileChooserType},
-        enums::{Align, Color, Event, Font, FrameType, Shortcut},
+        enums::{Align, Color, Cursor, Event, Font, FrameType, Shortcut},
         frame::Frame,
         group::{Flex, FlexType, Wizard},
         menu::{Choice, MenuButton, MenuButtonType, MenuFlag},
@@ -30,12 +30,13 @@ const WIDTH: i32 = 105;
 
 fn main() {
     if crate::once() {
-        app::GlobalState::<String>::new(env::var("HOME").unwrap() + "/.config/" + NAME);
+        const WIDTH: i32 = 360;
+        const HEIGHT: i32 = 640;
         Model::new().run(Settings {
             ignore_esc_close: true,
             resizable: true,
-            size: (360, 640),
-            size_range: Some((360, 640, 0, 0)),
+            size: (WIDTH, HEIGHT),
+            size_range: Some((WIDTH, HEIGHT, 0, 0)),
             color_map: Some(color_themes::DARK_THEME),
             scheme: Some(app::Scheme::Base),
             ..Default::default()
@@ -69,8 +70,7 @@ impl Sandbox for Model {
     }
 
     fn new() -> Self {
-        let file = app::GlobalState::<String>::get().with(move |file| file.clone());
-        Model::default(&file)
+        Model::default()
     }
 
     fn view(&mut self) {
@@ -80,7 +80,7 @@ impl Sandbox for Model {
             {
                 let mut header = Flex::default();
                 {
-                    crate::menu(&mut header);
+                    header.fixed(&crate::menu(), HEIGHT);
                     Frame::default();
                     let lang = self
                         .lang
@@ -167,8 +167,7 @@ impl Sandbox for Model {
         match message {
             Message::Page(value) => self.page = value,
             Message::Quit => {
-                let file = app::GlobalState::<String>::get().with(move |file| file.clone());
-                self.save(&file);
+                self.save();
                 app::quit();
             }
             Message::From(value) => self.from = value,
@@ -260,21 +259,32 @@ fn info() {
     help.set_text_size(16);
 }
 
-fn back(_: &mut Flex, event: Event) -> bool {
+fn back(flex: &mut Flex, event: Event) -> bool {
     match event {
         Event::Push => match app::event_mouse_button() {
             app::MouseButton::Right => {
                 MenuButton::default()
                     .with_type(MenuButtonType::Popup3)
                     .clone()
-                    .on_item_event("@<-", Shortcut::None, MenuFlag::Normal, move |_| {
-                        Message::Page(0)
-                    })
+                    .on_item_event(
+                        "@<-   &Back",
+                        Shortcut::None,
+                        MenuFlag::Normal,
+                        move |_| Message::Page(0),
+                    )
                     .popup();
                 true
             }
             _ => false,
         },
+        Event::Enter => {
+            flex.window().unwrap().set_cursor(Cursor::Hand);
+            true
+        }
+        Event::Leave => {
+            flex.window().unwrap().set_cursor(Cursor::Arrow);
+            true
+        }
         _ => false,
     }
 }
@@ -341,9 +351,8 @@ fn textdisplay(tooltip: &str, value: &str, font: i32, size: i32) {
     });
 }
 
-fn menu(flex: &mut Flex) {
-    let element = MenuButton::default();
-    element
+fn menu() -> MenuButton {
+    MenuButton::default()
         .clone()
         .on_item_event(
             "@#fileopen  &Open...",
@@ -380,8 +389,7 @@ fn menu(flex: &mut Flex) {
             Shortcut::Ctrl | 'q',
             MenuFlag::Normal,
             move |_| Message::Quit,
-        );
-    flex.fixed(&element, HEIGHT);
+        )
 }
 
 pub fn once() -> bool {

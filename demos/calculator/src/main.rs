@@ -41,7 +41,6 @@ const COLORS: [[Color; 6]; 2] = [
 const NAME: &str = "FlCalculator";
 
 fn main() {
-    app::GlobalState::<String>::new(std::env::var("HOME").unwrap() + "/.config/" + NAME);
     Model::new().run(Settings {
         size: (360, 640),
         resizable: false,
@@ -67,8 +66,7 @@ impl Sandbox for Model {
     }
 
     fn new() -> Self {
-        let file = app::GlobalState::<String>::get().with(move |file| file.clone());
-        Model::default(&file)
+        Model::default()
     }
 
     fn view(&mut self) {
@@ -142,8 +140,7 @@ impl Sandbox for Model {
     fn update(&mut self, message: Message) {
         match message {
             Message::Quit => {
-                let file = app::GlobalState::<String>::get().with(move |file| file.clone());
-                std::fs::write(file, rmp_serde::to_vec(&self).unwrap()).unwrap();
+                self.save();
                 app::quit();
             }
             Message::Theme => self.theme = !self.theme,
