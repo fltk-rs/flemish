@@ -26,6 +26,8 @@ pub enum Message {
     Quit,
 }
 
+const NAME: &str = "FlCairoButton";
+
 fn main() {
     Model::new().run(Settings {
         size: (640, 360),
@@ -46,7 +48,7 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        format!("{} - FlCairoButton", self.value())
+        format!("{} - {NAME}", self.value())
     }
 
     fn view(&mut self) {
@@ -76,7 +78,10 @@ impl Sandbox for Model {
         match message {
             Message::Inc => self.inc(),
             Message::Dec => self.dec(),
-            Message::Quit => app::quit(),
+            Message::Quit => {
+                self.save();
+                app::quit();
+            }
         }
     }
 }
