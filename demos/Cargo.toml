@@ -10,7 +10,6 @@ members = [
     "dialect",
     "flightbooker",
     "fltodo",
-    "picture",
     "resters",
     "sudokusolver",
 ]
