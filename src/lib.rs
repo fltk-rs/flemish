@@ -11,7 +11,7 @@ where
 {
     fn on_event<F: 'static + Fn(&Self) -> T>(self, cb: F) -> Self;
     fn set_activate(self, flag: bool) -> Self;
-    fn set_visible(self, flag: bool) -> Self; 
+    fn set_visible(self, flag: bool) -> Self;
 }
 
 pub trait OnMenuEvent<T>
@@ -40,18 +40,16 @@ where
         self
     }
     fn set_activate(mut self, flag: bool) -> Self {
-        if flag {
-            self.activate();
-        } else {
-            self.deactivate();
+        match flag {
+            true => self.activate(),
+            false => self.deactivate(),
         }
         self
     }
     fn set_visible(mut self, flag: bool) -> Self {
-        if flag {
-            self.show();
-        } else {
-            self.hide();
+        match flag {
+            true => self.show(),
+            false => self.hide(),
         }
         self
     }
@@ -88,11 +86,13 @@ pub struct Settings {
     pub inactive: Option<enums::Color>,
     pub selection: Option<enums::Color>,
     pub font: Option<enums::Font>,
+    pub xclass: Option<String>,
+    pub icon: Option<image::SvgImage>,
     pub font_size: u8,
     pub scheme: Option<app::Scheme>,
     pub color_map: Option<&'static [fltk_theme::ColorMap]>,
     pub theme: Option<fltk_theme::ThemeType>,
-    pub ignore_esc_close: bool,
+    pub ignore_esc_close: Option<enums::Event>,
     pub size_range: Option<(i32, i32, i32, i32)>,
     pub on_close_fn: Option<Box<dyn FnMut(&mut window::Window)>>,
 }
@@ -108,7 +108,7 @@ pub trait Sandbox {
         let color_theme = if let Some(color_map) = settings.color_map {
             fltk_theme::ColorTheme::from_colormap(color_map)
         } else {
-            fltk_theme::ColorTheme::from_colormap(fltk_theme::color_themes::BLACK_THEME)
+            fltk_theme::ColorTheme::from_colormap(fltk_theme::color_themes::GRAY_THEME)
         };
         color_theme.apply();
         if let Some(theme) = settings.theme {
@@ -141,7 +141,7 @@ pub trait Sandbox {
         if let Some(scheme) = settings.scheme {
             app::set_scheme(scheme);
         } else {
-            app::set_scheme(app::Scheme::Gtk);
+            app::set_scheme(app::Scheme::Base);
         }
         if let Some(font) = settings.font {
             app::set_font(font);
@@ -149,20 +149,28 @@ pub trait Sandbox {
         let (w, h) = settings.size;
         let w = if w == 0 { 400 } else { w };
         let h = if h == 0 { 300 } else { h };
-        let (x, y) = settings.pos;
+        let (mut x, mut y) = settings.pos;
+        if (x, y) == (0, 0) {
+            x = (app::screen_size().0 + w as f64 / 4.0) as i32;
+            y = (app::screen_size().1 + h as f64 / 4.0) as i32;
+        }
         let mut win = window::Window::default()
             .with_size(w, h)
+            .with_pos(x, y)
             .with_label(&self.title());
-        if (x, y) != (0, 0) {
-            win.set_pos(x, y);
-        }
         if let Some((min_w, min_h, max_w, max_h)) = settings.size_range {
             win.size_range(min_w, min_h, max_w, max_h);
         }
-        if settings.ignore_esc_close {
+        if let Some(value) = settings.xclass {
+            win.set_xclass(&value);
+        }
+        if let Some(value) = settings.icon {
+            win.set_icon(Some(value));
+        }
+        if let Some(value) = settings.ignore_esc_close {
             win.set_callback(move |_| {
                 if app::event() == enums::Event::Close {
-                    app::quit();    
+                    app::handle_main(value).unwrap();
                 }
             });
         }
@@ -179,6 +187,7 @@ pub trait Sandbox {
                 self.update(msg);
                 win.clear();
                 win.begin();
+                win.set_label(&self.title());
                 self.view();
                 win.end();
                 app::redraw();

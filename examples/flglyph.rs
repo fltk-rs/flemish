@@ -2,11 +2,11 @@
 
 use flemish::{
     app,
+    browser::{Browser, BrowserType},
     button::Button,
     color_themes,
-    enums::{CallbackTrigger, FrameType, Font},
+    enums::{CallbackTrigger, Font, FrameType},
     frame::Frame,
-    browser::{Browser, BrowserType},
     group::Flex,
     prelude::*,
     OnEvent, Sandbox, Settings,
@@ -21,7 +21,9 @@ struct Model {
 impl Model {
     fn init() -> Self {
         Self {
-            list: (0x2700..=0x27BF).map(|x| char::from_u32(x).unwrap()).collect(),
+            list: (0x2700..=0x27BF)
+                .map(|x| char::from_u32(x).unwrap())
+                .collect(),
             curr: 0,
         }
     }
@@ -65,7 +67,7 @@ const WIDTH: i32 = HEIGHT * 3;
 enum Message {
     Inc,
     Dec,
-    Choice(usize)
+    Choice(usize),
 }
 
 impl Sandbox for Model {
@@ -87,8 +89,12 @@ impl Sandbox for Model {
                 Message::Choice((browser.value() as usize).saturating_sub(1))
             });
             let mut buttons = Flex::default();
-            Button::default().with_label("@#<").on_event(move |_| Message::Dec);
-            Button::default().with_label("@#>").on_event(move |_| Message::Inc);
+            Button::default()
+                .with_label("@#<")
+                .on_event(move |_| Message::Dec);
+            Button::default()
+                .with_label("@#>")
+                .on_event(move |_| Message::Inc);
             buttons.end();
             buttons.set_pad(0);
             left.end();

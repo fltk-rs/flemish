@@ -11,7 +11,7 @@ use {
         enums::{Align, Color, ColorDepth, Event, Font, Shortcut},
         frame::Frame,
         group::Flex,
-        image::RgbImage,
+        image::{RgbImage,SvgImage},
         menu::{MenuButton, MenuButtonType, MenuFlag},
         prelude::*,
         OnEvent, OnMenuEvent, Sandbox, Settings,
@@ -27,12 +27,15 @@ pub enum Message {
 }
 
 const NAME: &str = "FlCairoButton";
+const QUIT: Event = Event::from_i32(404);
 
 fn main() {
     Model::new().run(Settings {
         size: (640, 360),
-        ignore_esc_close: true,
+        ignore_esc_close: Some(QUIT),
         resizable: false,
+        xclass: Some(String::from(NAME)),
+        icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
         background: Some(Color::from_u32(0xfdf6e3)),
         color_map: Some(color_themes::TAN_THEME),
         scheme: Some(app::Scheme::Base),
@@ -72,6 +75,15 @@ impl Sandbox for Model {
         page.end();
         page.set_pad(0);
         page.set_margin(0);
+        let mut clone = self.clone();
+        page.handle(move |_, event| {
+            if event == QUIT {
+                clone.save();
+                app::quit();
+                return true;
+            }
+            false
+        });
     }
 
     fn update(&mut self, message: Message) {

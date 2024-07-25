@@ -1,5 +1,6 @@
 use std::{env, fs};
 
+#[derive(Debug, Clone)]
 pub struct Model {
     value: u8,
 }

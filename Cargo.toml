@@ -15,3 +15,5 @@ exclude = ["./examples"]
 [dependencies]
 fltk = { version = "1.4" }
 fltk-theme = "0.7"
+fltk-table = "0.3"
+fltk-grid = "0.4"
