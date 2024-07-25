@@ -151,8 +151,8 @@ pub trait Sandbox {
         let h = if h == 0 { 300 } else { h };
         let (mut x, mut y) = settings.pos;
         if (x, y) == (0, 0) {
-            x = (app::screen_size().0 + w as f64 / 4.0) as i32;
-            y = (app::screen_size().1 + h as f64 / 4.0) as i32;
+            x = ((app::screen_size().0 + w as f64) / 4.0) as i32;
+            y = ((app::screen_size().1 + h as f64) / 4.0) as i32;
         }
         let mut win = window::Window::default()
             .with_size(w, h)

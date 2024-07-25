@@ -16,7 +16,6 @@ pub enum Message {
 fn main() {
     Model::new().run(Settings {
         size: (260, 260),
-        ignore_esc_close: true,
         resizable: false,
         background: Some(Color::White),
         color_map: Some(color_themes::TAN_THEME),
