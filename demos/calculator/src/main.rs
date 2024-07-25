@@ -9,6 +9,7 @@ use {
         enums::{Align, Color, Cursor, Event, Font, FrameType, Key, Shortcut},
         frame::Frame,
         group::Flex,
+        image::SvgImage,
         menu::{MenuButton, MenuButtonType, MenuFlag},
         prelude::*,
         text::{TextBuffer, TextDisplay, WrapMode},
@@ -44,9 +45,15 @@ fn main() {
     Model::new().run(Settings {
         size: (360, 640),
         resizable: false,
-        ignore_esc_close: true,
+        xclass: Some(String::from(NAME)),
+        icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
         color_map: Some(color_themes::TAN_THEME),
-        scheme: Some(app::Scheme::Base),
+        on_close_fn: Some(Box::new(move |_| {
+            if app::event() == Event::Close {
+                let (s, _) = app::channel::<Message>();
+                s.send(Message::Quit);
+            }
+        })),
         ..Default::default()
     })
 }

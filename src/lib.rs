@@ -92,7 +92,6 @@ pub struct Settings {
     pub scheme: Option<app::Scheme>,
     pub color_map: Option<&'static [fltk_theme::ColorMap]>,
     pub theme: Option<fltk_theme::ThemeType>,
-    pub ignore_esc_close: Option<enums::Event>,
     pub size_range: Option<(i32, i32, i32, i32)>,
     pub on_close_fn: Option<Box<dyn FnMut(&mut window::Window)>>,
 }
@@ -151,8 +150,8 @@ pub trait Sandbox {
         let h = if h == 0 { 300 } else { h };
         let (mut x, mut y) = settings.pos;
         if (x, y) == (0, 0) {
-            x = ((app::screen_size().0 + w as f64) / 4.0) as i32;
-            y = ((app::screen_size().1 + h as f64) / 4.0) as i32;
+            x = ((app::screen_size().0 - w as f64) / 2.0) as i32;
+            y = ((app::screen_size().1 - h as f64) / 2.0) as i32;
         }
         let mut win = window::Window::default()
             .with_size(w, h)
@@ -167,15 +166,14 @@ pub trait Sandbox {
         if let Some(value) = settings.icon {
             win.set_icon(Some(value));
         }
-        if let Some(value) = settings.ignore_esc_close {
-            win.set_callback(move |_| {
-                if app::event() == enums::Event::Close {
-                    app::handle_main(value).unwrap();
-                }
-            });
-        }
         if let Some(close_fn) = settings.on_close_fn {
             win.set_callback(close_fn);
+        } else {
+            win.set_callback(move |_| {
+                if app::event() == enums::Event::Close {
+                    app::quit();
+                }
+            });
         }
         self.view();
         win.end();
