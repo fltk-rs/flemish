@@ -1,110 +1,76 @@
-/*!
-# Flemish
-
-An elmish architecture for fltk-rs.
-
-## Usage
-Add flemish to your dependencies:
-```toml,ignore
-[dependencies]
-flemish = "0.3"
-```
-
-A usage example:
-```rust,no_run
-use flemish::{
-    button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
-};
-
-pub fn main() {
-    Counter::new().run(Settings {
-        size: (300, 100),
-        resizable: true,
-        color_map: Some(color_themes::BLACK_THEME),
-        ..Default::default()
-    })
-}
-
-#[derive(Default)]
-struct Counter {
-    value: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-enum Message {
-    IncrementPressed,
-    DecrementPressed,
-}
-
-impl Sandbox for Counter {
-    type Message = Message;
-
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn title(&self) -> String {
-        String::from("Counter - fltk-rs")
-    }
-
-    fn update(&mut self, message: Message) {
-        match message {
-            Message::IncrementPressed => {
-                self.value += 1;
-            }
-            Message::DecrementPressed => {
-                self.value -= 1;
-            }
-        }
-    }
-
-    fn view(&mut self) {
-        let col = Flex::default_fill().column();
-        Button::default()
-            .with_label("Increment")
-            .on_event(Message::IncrementPressed);
-        Frame::default().with_label(&self.value.to_string());
-        Button::default()
-            .with_label("Decrement")
-            .on_event(Message::DecrementPressed);
-        col.end();
-    }
-}
-```
-*/
+#![doc = include_str!("../README.md")]
 #![allow(clippy::needless_doctest_main)]
 
 use fltk::prelude::*;
 pub use fltk::*;
 pub use fltk_theme::*;
 
-pub trait OnEvent<W, T>
+pub trait OnEvent<T>
 where
-    W: WidgetExt,
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event(self, msg: T) -> Self
-    where
-        Self: Sized;
-    fn on_event_deferred<F: 'static + FnMut(&mut Self) -> T>(self, cb: F) -> Self
-    where
-        Self: Sized;
+    fn on_event<F: 'static + Fn(&Self) -> T>(self, cb: F) -> Self;
+    fn set_activate(self, flag: bool) -> Self;
+    fn set_visible(self, flag: bool) -> Self; 
 }
 
-impl<W, T> OnEvent<W, T> for W
+pub trait OnMenuEvent<T>
+where
+    T: Send + Sync + Clone + 'static,
+{
+    fn on_item_event<F: 'static + Fn(&Self) -> T>(
+        self,
+        name: &str,
+        shortcut: enums::Shortcut,
+        flag: menu::MenuFlag,
+        cb: F,
+    ) -> Self;
+}
+
+impl<W, T> OnEvent<T> for W
 where
     W: WidgetExt,
     T: Send + Sync + Clone + 'static,
 {
-    fn on_event(mut self, msg: T) -> Self {
-        let (s, _) = app::channel::<T>();
-        self.emit(s, msg);
-        self
-    }
-
-    fn on_event_deferred<F: 'static + FnMut(&mut Self) -> T>(mut self, mut cb: F) -> Self {
+    fn on_event<F: 'static + Fn(&Self) -> T>(mut self, cb: F) -> Self {
         let (s, _) = app::channel::<T>();
         self.set_callback(move |w| {
+            s.send(cb(w));
+        });
+        self
+    }
+    fn set_activate(mut self, flag: bool) -> Self {
+        if flag {
+            self.activate();
+        } else {
+            self.deactivate();
+        }
+        self
+    }
+    fn set_visible(mut self, flag: bool) -> Self {
+        if flag {
+            self.show();
+        } else {
+            self.hide();
+        }
+        self
+    }
+}
+
+impl<M, T> OnMenuEvent<T> for M
+where
+    M: MenuExt,
+    T: Send + Sync + Clone + 'static,
+{
+    fn on_item_event<F: 'static + Fn(&Self) -> T>(
+        mut self,
+        name: &str,
+        shortcut: enums::Shortcut,
+        flag: menu::MenuFlag,
+        cb: F,
+    ) -> Self {
+        let (s, _) = app::channel::<T>();
+        self.add(name, shortcut, flag, move |w| {
             s.send(cb(w));
         });
         self
@@ -126,6 +92,9 @@ pub struct Settings {
     pub scheme: Option<app::Scheme>,
     pub color_map: Option<&'static [fltk_theme::ColorMap]>,
     pub theme: Option<fltk_theme::ThemeType>,
+    pub ignore_esc_close: bool,
+    pub size_range: Option<(i32, i32, i32, i32)>,
+    pub on_close_fn: Option<Box<dyn FnMut(&mut window::Window)>>,
 }
 
 pub trait Sandbox {
@@ -186,6 +155,19 @@ pub trait Sandbox {
             .with_label(&self.title());
         if (x, y) != (0, 0) {
             win.set_pos(x, y);
+        }
+        if let Some((min_w, min_h, max_w, max_h)) = settings.size_range {
+            win.size_range(min_w, min_h, max_w, max_h);
+        }
+        if settings.ignore_esc_close {
+            win.set_callback(move |_| {
+                if app::event() == enums::Event::Close {
+                    app::quit();    
+                }
+            });
+        }
+        if let Some(close_fn) = settings.on_close_fn {
+            win.set_callback(close_fn);
         }
         self.view();
         win.end();

@@ -48,11 +48,11 @@ impl Sandbox for Counter {
         let col = Flex::default_fill().column();
         Button::default()
             .with_label("Increment")
-            .on_event(Message::IncrementPressed);
+            .on_event(|_| Message::IncrementPressed);
         Frame::default().with_label(&self.value.to_string());
         Button::default()
             .with_label("Decrement")
-            .on_event(Message::DecrementPressed);
+            .on_event(|_| Message::DecrementPressed);
         col.end();
     }
 }

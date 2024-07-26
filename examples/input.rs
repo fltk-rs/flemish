@@ -49,7 +49,7 @@ impl Sandbox for State {
         name.set_value(&self.text);
         Button::default()
             .with_label("Submit")
-            .on_event_deferred(move |_| Message::Submit(name.value()));
+            .on_event(move |_| Message::Submit(name.value()));
         col.end();
     }
 }
