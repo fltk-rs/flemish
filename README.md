@@ -6,7 +6,7 @@ An elmish architecture for fltk-rs, inspired by Iced.
 Add flemish to your dependencies:
 ```toml
 [dependencies]
-flemish = "0.3"
+flemish = "0.5"
 ```
 
 A usage example:
