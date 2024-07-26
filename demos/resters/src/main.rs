@@ -11,6 +11,7 @@ use {
         frame::Frame,
         group::Flex,
         menu::Choice,
+        image::SvgImage,
         misc::{InputChoice, Progress},
         prelude::*,
         text::{StyleTableEntry, TextBuffer, TextDisplay, WrapMode},
@@ -20,14 +21,15 @@ use {
     model::Model,
 };
 
+const NAME: &str = "FlResters";
+
 fn main() {
     Model::new().run(Settings {
-        ignore_esc_close: true,
         resizable: true,
         size: (640, 360),
-        size_range: Some((640, 360, 0, 0)),
+        xclass: Some(String::from(NAME)),
+        icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
         color_map: Some(color_themes::DARK_THEME),
-        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }
@@ -47,7 +49,7 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        String::from("FlResters")
+        String::from(NAME)
     }
 
     fn view(&mut self) {

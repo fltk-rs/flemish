@@ -4,13 +4,13 @@ mod model;
 
 use {
     flemish::{
-        app,
         browser::{Browser, BrowserType},
         button::Button,
         color_themes, draw,
         enums::{Color, FrameType},
         frame::Frame,
         group::Flex,
+        image::SvgImage,
         prelude::*,
         OnEvent, Sandbox, Settings,
     },
@@ -25,10 +25,10 @@ const WIDTH: i32 = HEIGHT * 3;
 pub fn main() {
     Model::new().run(Settings {
         size: (640, 360),
-        resizable: false,
-        ignore_esc_close: true,
+        resizable: true,
+        xclass: Some(String::from(NAME)),
+        icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
         color_map: Some(color_themes::DARK_THEME),
-        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

@@ -7,7 +7,7 @@ use {
     flemish::{
         app,
         button::Button,
-        color_themes, draw,
+        draw,
         enums::{Align, Color, ColorDepth, Event, Font, Shortcut},
         frame::Frame,
         group::Flex,
@@ -35,7 +35,6 @@ fn main() {
         xclass: Some(String::from(NAME)),
         icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
         background: Some(Color::from_u32(0xfdf6e3)),
-        color_map: Some(color_themes::TAN_THEME),
         on_close_fn: Some(Box::new(move |_| {
             if app::event() == Event::Close {
                 let (s, _) = app::channel::<Message>();

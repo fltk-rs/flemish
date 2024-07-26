@@ -44,7 +44,6 @@ const NAME: &str = "FlCalculator";
 fn main() {
     Model::new().run(Settings {
         size: (360, 640),
-        resizable: false,
         xclass: Some(String::from(NAME)),
         icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
         color_map: Some(color_themes::TAN_THEME),

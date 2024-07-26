@@ -24,10 +24,7 @@ use {
 pub fn main() {
     Model::new().run(Settings {
         size: (640, 360),
-        resizable: false,
-        ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
-        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

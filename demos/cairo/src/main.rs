@@ -3,7 +3,7 @@ mod model;
 use {
     cairo::Context,
     flemish::{
-        app, color_themes, enums::{Color, Event}, frame::Frame, prelude::*, OnEvent, Sandbox, Settings,
+        enums::{Color, Event}, frame::Frame, prelude::*, OnEvent, Sandbox, Settings,
     },
     model::Model,
 };
@@ -16,10 +16,7 @@ pub enum Message {
 fn main() {
     Model::new().run(Settings {
         size: (260, 260),
-        resizable: false,
         background: Some(Color::White),
-        color_map: Some(color_themes::TAN_THEME),
-        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

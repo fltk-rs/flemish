@@ -4,7 +4,7 @@ mod model;
 
 use {
     flemish::{
-        app, button::Button, color_themes, dialog::alert_default, enums::FrameType, frame::Frame,
+        button::Button, color_themes, dialog::alert_default, enums::FrameType, frame::Frame,
         group::Flex, input::Input, menu::Choice, prelude::*, OnEvent, Sandbox, Settings,
     },
     model::Model,
@@ -13,10 +13,7 @@ use {
 pub fn main() {
     Model::new().run(Settings {
         size: (640, 360),
-        resizable: false,
-        ignore_esc_close: true,
         color_map: Some(color_themes::DARK_THEME),
-        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

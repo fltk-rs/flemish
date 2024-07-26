@@ -9,9 +9,10 @@ members = [
     "csv",
     "dialect",
     "flightbooker",
-    "fltodo",
     "resters",
     "sudokusolver",
+    "text",
+    "todo",
 ]
 
 [profile.release]

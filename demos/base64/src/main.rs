@@ -2,11 +2,11 @@ mod model;
 
 use {
     flemish::{
-        app,
         button::Button,
         color_themes,
         enums::{Color, Event, Font},
         frame::Frame,
+        image::SvgImage,
         group::{Flex, FlexType},
         prelude::*,
         text::{TextBuffer, TextEditor, WrapMode},
@@ -17,6 +17,7 @@ use {
 
 const PAD: i32 = 10;
 const HEIGHT: i32 = PAD * 3;
+const NAME: &str = "FlBase64";
 
 #[derive(Clone)]
 pub enum Message {
@@ -28,12 +29,11 @@ pub enum Message {
 
 fn main() {
     Model::new().run(Settings {
-        ignore_esc_close: true,
         resizable: true,
         size: (360, 640),
-        size_range: Some((360, 640, 0, 0)),
+        xclass: Some(String::from(NAME)),
+        icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
         color_map: Some(color_themes::DARK_THEME),
-        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }
@@ -46,7 +46,7 @@ impl Sandbox for Model {
     }
 
     fn title(&self) -> String {
-        String::from("FlBase64")
+        String::from(NAME)
     }
 
     fn view(&mut self) {

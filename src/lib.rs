@@ -104,15 +104,18 @@ pub trait Sandbox {
     fn update(&mut self, message: Self::Message);
     fn run(&mut self, settings: Settings) {
         let a = app::App::default();
-        let color_theme = if let Some(color_map) = settings.color_map {
+        if let Some(scheme) = settings.scheme {
+            app::set_scheme(scheme);
+        } else {
+            app::set_scheme(app::Scheme::Base);
+        }
+        if let Some(color_map) = settings.color_map {
             fltk_theme::ColorTheme::from_colormap(color_map)
         } else {
             fltk_theme::ColorTheme::from_colormap(fltk_theme::color_themes::GRAY_THEME)
-        };
-        color_theme.apply();
+        }.apply();
         if let Some(theme) = settings.theme {
-            let widget_theme = fltk_theme::WidgetTheme::new(theme);
-            widget_theme.apply();
+            fltk_theme::WidgetTheme::new(theme).apply();
         }
         if let Some(color) = settings.background {
             let c = color.to_rgb();
@@ -134,16 +137,11 @@ pub trait Sandbox {
             let c = color.to_rgb();
             app::set_inactive_color(c.0, c.1, c.2);
         }
-        if settings.font_size != 0 {
-            app::set_font_size(settings.font_size);
-        }
-        if let Some(scheme) = settings.scheme {
-            app::set_scheme(scheme);
-        } else {
-            app::set_scheme(app::Scheme::Base);
-        }
         if let Some(font) = settings.font {
             app::set_font(font);
+        }
+        if settings.font_size != 0 {
+            app::set_font_size(settings.font_size);
         }
         let (w, h) = settings.size;
         let w = if w == 0 { 400 } else { w };
@@ -157,9 +155,6 @@ pub trait Sandbox {
             .with_size(w, h)
             .with_pos(x, y)
             .with_label(&self.title());
-        if let Some((min_w, min_h, max_w, max_h)) = settings.size_range {
-            win.size_range(min_w, min_h, max_w, max_h);
-        }
         if let Some(value) = settings.xclass {
             win.set_xclass(&value);
         }
@@ -177,7 +172,14 @@ pub trait Sandbox {
         }
         self.view();
         win.end();
-        win.make_resizable(settings.resizable);
+        if settings.resizable {
+            win.make_resizable(settings.resizable);
+            if let Some((min_w, min_h, max_w, max_h)) = settings.size_range {
+                win.size_range(min_w, min_h, max_w, max_h);
+            } else {
+                win.size_range(w, h, 0, 0);
+            }
+        };
         win.show();
         let (_, r) = app::channel::<Self::Message>();
         while a.wait() {

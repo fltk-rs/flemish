@@ -8,10 +8,7 @@ use flemish::{
 pub fn main() {
     MyApp::new().run(Settings {
         size: (300, 180),
-        resizable: true,
-        ignore_esc_close: true,
         color_map: Some(color_themes::BLACK_THEME),
-        scheme: Some(app::Scheme::Base),
         ..Default::default()
     })
 }

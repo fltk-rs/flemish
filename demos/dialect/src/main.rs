@@ -10,6 +10,7 @@ use {
         dialog::{alert_default, FileChooser, FileChooserType},
         enums::{Align, Color, Cursor, Event, Font, FrameType, Shortcut},
         frame::Frame,
+        image::SvgImage,
         group::{Flex, FlexType, Wizard},
         menu::{Choice, MenuButton, MenuButtonType, MenuFlag},
         misc::HelpView,
@@ -30,15 +31,18 @@ const WIDTH: i32 = 105;
 
 fn main() {
     if crate::once() {
-        const WIDTH: i32 = 360;
-        const HEIGHT: i32 = 640;
         Model::new().run(Settings {
-            ignore_esc_close: true,
             resizable: true,
-            size: (WIDTH, HEIGHT),
-            size_range: Some((WIDTH, HEIGHT, 0, 0)),
+            size: (360, 640),
+            xclass: Some(String::from(NAME)),
+            icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
             color_map: Some(color_themes::DARK_THEME),
-            scheme: Some(app::Scheme::Base),
+            on_close_fn: Some(Box::new(move |_| {
+                if app::event() == Event::Close {
+                    let (s, _) = app::channel::<Message>();
+                    s.send(Message::Quit);
+                }
+            })),
             ..Default::default()
         });
     }
