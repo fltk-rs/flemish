@@ -1,7 +1,7 @@
 use flemish::{theme::color_themes, view::*, Settings};
 
 pub fn main() {
-    flemish::application("counter", Counter::update, Counter::view)
+    flemish::application("dynamic", Counter::update, Counter::view)
         .settings(Settings {
             size: (300, 100),
             resizable: true,
@@ -35,9 +35,13 @@ impl Counter {
     }
 
     fn view(&self) -> View<Message> {
+        let mut fs = vec![];
+        for i in 0..self.value {
+            fs.push(Frame::new(&i.to_string()).view());
+        }
         Column::new(&[
             Button::new("+", Message::Increment).view(),
-            Frame::new(&self.value.to_string()).view(),
+            Row::new(&fs).view(),
             Button::new("-", Message::Decrement).view(),
         ])
         .view()

@@ -1,16 +1,15 @@
-use flemish::{
-    color_themes, frame::Frame, group::Flex, enums::Shortcut, menu::{MenuBar, MenuFlag}, prelude::*, OnMenuEvent, Sandbox,
-    Settings,
-};
+use flemish::{enums::Shortcut, view::*, Settings};
 
 pub fn main() {
-    MenuApp::new().run(Settings {
-        size: (300, 300),
-        resizable: true,
-        ignore_esc_close: true,
-        color_map: Some(color_themes::BLACK_THEME),
-        ..Default::default()
-    })
+    flemish::application("menu app", MenuApp::update, MenuApp::view)
+        .settings(Settings {
+            size: (300, 300),
+            resizable: true,
+            menu_linespacing: Some(14),
+            ignore_esc_close: true,
+            ..Default::default()
+        })
+        .run();
 }
 
 #[derive(Default)]
@@ -20,49 +19,42 @@ struct MenuApp {
 
 #[derive(Debug, Clone, Copy)]
 enum Message {
-    IncrementPressed,
-    DecrementPressed,
+    Increment,
+    Decrement,
 }
 
-impl Sandbox for MenuApp {
-    type Message = Message;
-
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn title(&self) -> String {
-        String::from("MenuApp - fltk-rs")
-    }
-
+impl MenuApp {
     fn update(&mut self, message: Message) {
         match message {
-            Message::IncrementPressed => {
+            Message::Increment => {
                 self.value += 1;
             }
-            Message::DecrementPressed => {
+            Message::Decrement => {
                 self.value -= 1;
             }
         }
     }
 
-    fn view(&mut self) {
-        let mut col = Flex::default_fill().column();
-        let m = MenuBar::default()
-            .on_item_event(
-                "Command/Increment",
-                Shortcut::None,
-                MenuFlag::Normal,
-                |_| Message::IncrementPressed,
-            )
-            .on_item_event(
-                "Command/Decrement",
-                Shortcut::None,
-                MenuFlag::Normal,
-                |_| Message::DecrementPressed,
-            );
-        col.fixed(&m, 40);
-        Frame::default().with_label(&self.value.to_string());
-        col.end();
+    fn view(&self) -> View<Message> {
+        Column::new(&[
+            MenuBar::new(&[
+                MenuItem::new(
+                    "Command/Increment",
+                    Shortcut::None,
+                    MenuFlag::Normal,
+                    Message::Increment,
+                ),
+                MenuItem::new(
+                    "Command/Decrement",
+                    Shortcut::None,
+                    MenuFlag::Normal,
+                    Message::Decrement,
+                ),
+            ])
+            .fixed(30)
+            .view(),
+            Frame::new(&self.value.to_string()).view(),
+        ])
+        .view()
     }
 }

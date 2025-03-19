@@ -6,22 +6,22 @@ An elmish architecture for fltk-rs, inspired by Iced.
 Add flemish to your dependencies:
 ```toml
 [dependencies]
-flemish = "0.5"
+flemish = "0.6"
 ```
 
 A usage example:
-```rust
-use flemish::{
-    button::Button, color_themes, frame::Frame, group::Flex, prelude::*, OnEvent, Sandbox, Settings,
-};
+```rust,no_run
+use flemish::{theme::color_themes, widget::*, Settings};
 
 pub fn main() {
-    Counter::new().run(Settings {
-        size: (300, 100),
-        resizable: true,
-        color_map: Some(color_themes::BLACK_THEME),
-        ..Default::default()
-    })
+    flemish::application("counter", Counter::update, Counter::view)
+        .settings(Settings {
+            size: (300, 100),
+            resizable: true,
+            color_map: Some(color_themes::BLACK_THEME),
+            ..Default::default()
+        })
+        .run();
 }
 
 #[derive(Default)]
@@ -31,42 +31,29 @@ struct Counter {
 
 #[derive(Debug, Clone, Copy)]
 enum Message {
-    IncrementPressed,
-    DecrementPressed,
+    Increment,
+    Decrement,
 }
 
-impl Sandbox for Counter {
-    type Message = Message;
-
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn title(&self) -> String {
-        String::from("Counter - fltk-rs")
-    }
-
+impl Counter {
     fn update(&mut self, message: Message) {
         match message {
-            Message::IncrementPressed => {
+            Message::Increment => {
                 self.value += 1;
             }
-            Message::DecrementPressed => {
+            Message::Decrement => {
                 self.value -= 1;
             }
         }
     }
 
-    fn view(&mut self) {
-        let col = Flex::default_fill().column();
-        Button::default()
-            .with_label("Increment")
-            .on_event(|_| Message::IncrementPressed);
-        Frame::default().with_label(&self.value.to_string());
-        Button::default()
-            .with_label("Decrement")
-            .on_event(|_| Message::DecrementPressed);
-        col.end();
+    fn view(&self) -> View<Message> {
+        Column::new(&[
+            Button::new("+", Message::Increment).view(),
+            Frame::new(&self.value.to_string()).view(),
+            Button::new("-", Message::Decrement).view(),
+        ])
+        .view()
     }
 }
 ```

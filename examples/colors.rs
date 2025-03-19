@@ -1,19 +1,22 @@
-use flemish::{theme::color_themes, view::*, Settings};
+use flemish::{
+    enums::{Color, FrameType},
+    view::*,
+    Settings,
+};
 
 pub fn main() {
-    flemish::application("counter", Counter::update, Counter::view)
+    flemish::application("colors", Colors::update, Colors::view)
         .settings(Settings {
             size: (300, 100),
             resizable: true,
-            color_map: Some(color_themes::BLACK_THEME),
             ..Default::default()
         })
         .run();
 }
 
 #[derive(Default)]
-struct Counter {
-    value: i32,
+struct Colors {
+    value: i8,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -22,7 +25,7 @@ enum Message {
     Decrement,
 }
 
-impl Counter {
+impl Colors {
     fn update(&mut self, message: Message) {
         match message {
             Message::Increment => {
@@ -37,7 +40,14 @@ impl Counter {
     fn view(&self) -> View<Message> {
         Column::new(&[
             Button::new("+", Message::Increment).view(),
-            Frame::new(&self.value.to_string()).view(),
+            Frame::new(&self.value.to_string())
+                .boxtype(FrameType::FlatBox)
+                .color(Color::by_index(self.value as _))
+                .label_color(Color::contrast(
+                    Color::Gray0,
+                    Color::by_index(self.value as _),
+                ))
+                .view(),
             Button::new("-", Message::Decrement).view(),
         ])
         .view()

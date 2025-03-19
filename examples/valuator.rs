@@ -1,11 +1,11 @@
 use flemish::{theme::color_themes, view::*, Settings};
 
 pub fn main() {
-    flemish::application("input", State::update, State::view)
+    flemish::application("valuators", State::update, State::view)
         .settings(Settings {
             size: (300, 100),
             resizable: true,
-            color_map: Some(color_themes::BLACK_THEME),
+            color_map: Some(color_themes::GRAY_THEME),
             ..Default::default()
         })
         .run();
@@ -13,31 +13,28 @@ pub fn main() {
 
 #[derive(Default)]
 struct State {
-    text: String,
+    value: f64,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    Input(String),
-    Print,
+    Input(f64),
 }
 
 impl State {
     fn update(&mut self, message: Message) {
         match message {
-            Message::Input(s) => self.text = s,
-            Message::Print => println!("Hello {}", &self.text),
+            Message::Input(s) => self.value = s,
         }
     }
 
     fn view(&self) -> View<Message> {
         Column::new(&[
-            Frame::new("Enter name:").view(),
-            Input::new(&self.text)
-                .on_input(Message::Input)
-                .on_submit(|_| Message::Print)
+            Frame::new(&self.value.to_string()).view(),
+            HorNiceSlider::new(self.value)
+                .on_change(Message::Input)
+                .fixed(30)
                 .view(),
-            Button::new("Submit", Message::Print).view(),
         ])
         .view()
     }
