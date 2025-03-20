@@ -1,0 +1,12 @@
+[package]
+name = "http_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = {version = "1", features = ["full"] }
+tokio-stream = "0.1"
+flemish = { path = "../.." }
+axum = "0.8"
+futures = "0.3"
+async-stream = "0.3"
