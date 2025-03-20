@@ -10,7 +10,7 @@ use crate::task::Task;
 use crate::vdom;
 use crate::view::View;
 
-pub struct Application<T, Message: Send + Sync, U: Into<Task<Message>>> {
+pub struct Application<T, Message: Send + Sync + 'static, U: Into<Task<Message>>> {
     title: String,
     update_fn: fn(&mut T, Message) -> U,
     view_fn: fn(&T) -> View<Message>,

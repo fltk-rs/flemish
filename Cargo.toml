@@ -19,6 +19,7 @@ fltk-table = "0.3"
 dyn-clone = "1"
 tokio = {version = "1", features = ["full"] }
 futures = "0.3"
+async-stream = "0.3"
 
 [dev-dependencies]
 anyhow = "1"

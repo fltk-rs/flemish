@@ -1,67 +1,31 @@
-use fltk::app::Sender;
-use fltk::enums::Event;
-use std::sync::{
-    atomic::{AtomicBool, AtomicI32, Ordering},
-    Arc,
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, OnceLock
+    },
+    time::{Duration, Instant},
 };
-use std::time::{Duration, Instant};
 
-pub enum SubType<M> {
+use fltk::{app::Sender, enums::Event, prelude::*};
+use futures::{stream::BoxStream, StreamExt};
+use tokio::task;
+use async_stream::stream;
+
+pub trait Recipe {
+    type Output: Clone + Send + Sync + 'static;
+
+    fn stream(self: Box<Self>) -> BoxStream<'static, Self::Output>;
+}
+
+pub enum Subscription<M>
+where
+    M: Send + Sync + 'static,
+{
     None,
-    Instant(Box<dyn Fn(Instant) -> Option<M> + Send + Sync>),
-    Event(Box<dyn Fn(Event) -> Option<M> + Send + Sync>),
-}
-
-pub struct Subscription<M> {
-    pub interval: Option<u64>,
-    pub generator: SubType<M>,
-    pub cancel_flag: Option<Arc<AtomicBool>>,
-}
-
-impl Subscription<Instant> {
-    pub fn every(duration: Duration) -> Self {
-        Subscription::run(duration, |_| Instant::now())
-    }
-
-    pub fn run<F>(duration: Duration, f: F) -> Self
-    where
-        F: 'static + Send + Sync + Fn(Duration) -> Instant,
-    {
-        Subscription {
-            interval: Some(duration.as_millis() as u64),
-            generator: SubType::Instant(Box::new(move |start| Some(f(start.elapsed())))),
-            cancel_flag: None,
-        }
-    }
-}
-
-impl Subscription<Event> {
-    pub fn events() -> Self {
-        Subscription {
-            interval: Some(8),
-            generator: SubType::Event(Box::new(Some)),
-            cancel_flag: None,
-        }
-    }
-
-    pub fn on_event<F>(filter: F) -> Subscription<Event>
-    where
-        F: Fn(Event) -> bool + Send + Sync + 'static,
-    {
-        Subscription {
-            interval: None,
-            generator: SubType::Event(Box::new(
-                move |ev: Event| {
-                    if filter(ev) {
-                        Some(ev)
-                    } else {
-                        None
-                    }
-                },
-            )),
-            cancel_flag: None,
-        }
-    }
+    Recipe {
+        recipe: Box<dyn Recipe<Output = M> + Send + Sync>,
+        cancel_flag: Option<Arc<AtomicBool>>,
+    },
 }
 
 impl<M> Subscription<M>
@@ -69,42 +33,61 @@ where
     M: Clone + Send + Sync + 'static,
 {
     pub fn none() -> Self {
-        Subscription {
-            interval: None,
-            generator: SubType::None,
+        Subscription::None
+    }
+
+    pub fn from_recipe<R>(recipe: R) -> Self
+    where
+        R: Recipe<Output = M> + Send + Sync + 'static,
+    {
+        Subscription::Recipe {
+            recipe: Box::new(recipe),
             cancel_flag: None,
         }
     }
 
-    pub fn map<U, F>(self, f: F) -> Subscription<U>
-    where
-        U: Clone + Send + Sync + 'static,
-        F: Fn(M) -> U + Send + Sync + 'static + Clone,
-    {
-        match self.generator {
-            SubType::None => Subscription::none(),
-            SubType::Instant(g) => Subscription {
-                interval: self.interval,
-                cancel_flag: self.cancel_flag.clone(),
-                generator: SubType::Instant(Box::new(move |now| g(now).map(&f))),
-            },
-            SubType::Event(g) => Subscription {
-                interval: self.interval,
-                cancel_flag: self.cancel_flag.clone(),
-                generator: SubType::Event(Box::new(move |ev| g(ev).map(&f))),
-            },
+    pub fn cancelable(mut self, flag: Arc<AtomicBool>) -> Self {
+        if let Subscription::Recipe { cancel_flag, .. } = &mut self {
+            *cancel_flag = Some(flag);
         }
+        self
     }
 
-    pub fn cancelable(self, flag: Arc<AtomicBool>) -> Self {
-        Subscription {
-            cancel_flag: Some(flag),
-            ..self
+    pub fn map<N, F>(self, f: F) -> Subscription<N>
+    where
+        N: Clone + Send + Sync + 'static,
+        F: Fn(M) -> N + Send + Sync + 'static + Clone,
+    {
+        match self {
+            Subscription::None => Subscription::None,
+            Subscription::Recipe { recipe, cancel_flag } => {
+                Subscription::Recipe {
+                    recipe: Box::new(MapRecipe {
+                        inner: recipe,
+                        mapper: f,
+                    }),
+                    cancel_flag,
+                }
+            }
         }
     }
 }
 
-pub fn batch<M>(subs: Vec<Subscription<M>>) -> Vec<Subscription<M>> {
+impl Subscription<Instant> {
+    pub fn every(duration: Duration) -> Subscription<Instant> {
+        Subscription::from_recipe(EveryRecipe { duration })
+    }
+}
+
+impl Subscription<Event> {
+    pub fn events() -> Subscription<Event> {
+        Subscription::from_recipe(EventsRecipe {
+            interval: Duration::from_millis(8),
+        })
+    }
+}
+
+pub fn batch<M: Send + Sync>(subs: Vec<Subscription<M>>) -> Vec<Subscription<M>> {
     subs
 }
 
@@ -116,70 +99,136 @@ pub fn start_subscription<M>(
     M: Clone + Send + Sync + 'static,
 {
     use fltk::prelude::WidgetBase;
-    use tokio::task;
 
-    let last_event = Arc::new(AtomicI32::new(0));
-    let event = Arc::new(AtomicI32::new(0));
+    let last_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
+    let current_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
 
     win.handle({
-        let event = event.clone();
+        let current_event = current_event.clone();
         move |_w, ev| {
-            if ev != Event::NoEvent {
-                event.store(ev.bits(), Ordering::Relaxed);
+            if ev != Event::NoEvent && ev != Event::Resize && ev != Event::Move {
+                current_event.store(ev.bits(), Ordering::Relaxed);
             }
             false
         }
     });
 
+    EVENTS_CONTEXT.set(Some(EventsContext {
+        last_event: last_event.clone(),
+        current_event: current_event.clone(),
+    })).ok();
+
     for sub in subscriptions {
-        let sender = sender.clone();
-        let cancel_flag = sub.cancel_flag.clone();
-
-        let interval = sub.interval.unwrap_or(16);
-
-        match sub.generator {
-            SubType::None => {}
-            SubType::Instant(f) => {
+        match sub {
+            Subscription::None => {}
+            Subscription::Recipe { recipe, cancel_flag } => {
+                let mut stream = recipe.stream();
+                let sender = sender.clone();
                 task::spawn(async move {
-                    loop {
+                    while let Some(msg) = stream.next().await {
                         if let Some(flag) = &cancel_flag {
                             if flag.load(Ordering::Relaxed) {
                                 break;
                             }
                         }
-                        if interval > 0 {
-                            tokio::time::sleep(Duration::from_millis(interval)).await;
-                        }
-                        let now = Instant::now();
-                        if let Some(msg) = f(now) {
-                            sender.send(msg);
-                        }
-                    }
-                });
-            }
-            SubType::Event(f) => {
-                let last_event = last_event.clone();
-                let event = event.clone();
-                task::spawn(async move {
-                    loop {
-                        if let Some(flag) = &cancel_flag {
-                            if flag.load(Ordering::Relaxed) {
-                                break;
-                            }
-                        }
-                        if interval > 0 {
-                            tokio::time::sleep(Duration::from_millis(interval)).await;
-                        }
-
-                        if event.load(Ordering::Relaxed) != last_event.load(Ordering::Relaxed) {
-                            last_event.store(event.load(Ordering::Relaxed), Ordering::Relaxed);
-                            if let Some(msg) = f(Event::from_i32(event.load(Ordering::Relaxed))) {
-                                sender.send(msg);
-                            }
-                        }
+                        sender.send(msg.clone());
                     }
                 });
             }
         }
+    }
+}
+
+static EVENTS_CONTEXT: OnceLock<Option<EventsContext>> = OnceLock::new();
+
+struct EventsContext {
+    last_event: Arc<std::sync::atomic::AtomicI32>,
+    current_event: Arc<std::sync::atomic::AtomicI32>,
+}
+
+struct EveryRecipe {
+    pub duration: Duration,
+}
+
+impl Recipe for EveryRecipe {
+    type Output = Instant;
+
+    fn stream(self: Box<Self>) -> BoxStream<'static, Instant> {
+        let duration = self.duration;
+        let s = stream! {
+            loop {
+                tokio::time::sleep(duration).await;
+                yield Instant::now();
+            }
+        };
+        s.boxed()
+    }
+}
+
+struct EventsRecipe {
+    pub interval: Duration,
+}
+
+impl Recipe for EventsRecipe {
+    type Output = Event;
+
+    fn stream(self: Box<Self>) -> BoxStream<'static, Event> {
+        let interval = self.interval;
+        let s = stream! {
+            let context_opt = EVENTS_CONTEXT.get();
+            if context_opt.is_none() || context_opt.unwrap().is_none() {
+                return;
+            }
+            let context = context_opt.unwrap().as_ref().unwrap();
+
+            let last_event = &context.last_event;
+            let current_event = &context.current_event;
+
+            loop {
+                tokio::time::sleep(interval).await;
+                let c = current_event.load(Ordering::Relaxed);
+                let l = last_event.load(Ordering::Relaxed);
+                if c != l {
+                    last_event.store(c, Ordering::Relaxed);
+
+                    let ev = Event::from_i32(c);
+                    if ev != Event::NoEvent {
+                        yield ev;
+                    }
+                }
+            }
+        };
+        s.boxed()
+    }
+}
+
+struct MapRecipe<In, Out, F>
+where
+    F: Fn(In) -> Out + Clone + Send + Sync + 'static,
+    In: Clone + Send + Sync + 'static,
+    Out: Clone + Send + Sync + 'static,
+{
+    inner: Box<dyn Recipe<Output = In> + Send + Sync>,
+    mapper: F,
+}
+
+impl<In, Out, F> Recipe for MapRecipe<In, Out, F>
+where
+    F: Fn(In) -> Out + Clone + Send + Sync + 'static,
+    In: Clone + Send + Sync + 'static,
+    Out: Clone + Send + Sync + 'static,
+{
+    type Output = Out;
+
+    fn stream(self: Box<Self>) -> BoxStream<'static, Out> {
+        let mapper = self.mapper.clone();
+        let mut inner_stream = self.inner.stream();
+
+        let s = stream! {
+            while let Some(value_in) = inner_stream.next().await {
+                yield mapper(value_in);
+            }
+        };
+        s.boxed()
     }
 }
