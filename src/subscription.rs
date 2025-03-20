@@ -1,19 +1,19 @@
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, OnceLock
+        Arc, OnceLock,
     },
     time::{Duration, Instant},
 };
 
+use async_stream::stream;
 use fltk::{app::Sender, enums::Event};
 use futures::{stream::BoxStream, StreamExt};
-use tokio::task;
-use tokio_stream::wrappers::UnboundedReceiverStream;
-use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
-use async_stream::stream;
 use std::future::Future;
 use std::marker::PhantomData;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
+use tokio::task;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 pub trait Recipe {
     type Output: Clone + Send + Sync + 'static;
@@ -50,6 +50,21 @@ where
         }
     }
 
+    pub fn run<F, Fut>(f: F) -> Self
+    where
+        F: FnOnce(UnboundedSender<M>) + Send + Sync + 'static,
+    {
+        Subscription::from_recipe(GenericSyncRecipe::new(f))
+    }
+
+    pub fn run_async<F, Fut>(f: F) -> Self
+    where
+        F: FnOnce(UnboundedSender<M>) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
+    {
+        Subscription::from_recipe(GenericAsyncRecipe::new(f))
+    }
+
     pub fn cancelable(mut self, flag: Arc<AtomicBool>) -> Self {
         if let Subscription::Recipe { cancel_flag, .. } = &mut self {
             *cancel_flag = Some(flag);
@@ -64,15 +79,16 @@ where
     {
         match self {
             Subscription::None => Subscription::None,
-            Subscription::Recipe { recipe, cancel_flag } => {
-                Subscription::Recipe {
-                    recipe: Box::new(MapRecipe {
-                        inner: recipe,
-                        mapper: f,
-                    }),
-                    cancel_flag,
-                }
-            }
+            Subscription::Recipe {
+                recipe,
+                cancel_flag,
+            } => Subscription::Recipe {
+                recipe: Box::new(MapRecipe {
+                    inner: recipe,
+                    mapper: f,
+                }),
+                cancel_flag,
+            },
         }
     }
 }
@@ -117,15 +133,20 @@ pub fn start_subscription<M>(
         }
     });
 
-    EVENTS_CONTEXT.set(Some(EventsContext {
-        last_event: last_event.clone(),
-        current_event: current_event.clone(),
-    })).ok();
+    EVENTS_CONTEXT
+        .set(Some(EventsContext {
+            last_event: last_event.clone(),
+            current_event: current_event.clone(),
+        }))
+        .ok();
 
     for sub in subscriptions {
         match sub {
             Subscription::None => {}
-            Subscription::Recipe { recipe, cancel_flag } => {
+            Subscription::Recipe {
+                recipe,
+                cancel_flag,
+            } => {
                 let mut stream = recipe.stream();
                 let sender = sender.clone();
                 task::spawn(async move {
@@ -271,6 +292,50 @@ where
             if let Some(f) = f_opt.take() {
                 tokio::task::spawn(async move {
                     f(tx).await;
+                });
+            }
+
+            let mut rx_stream = UnboundedReceiverStream::new(rx);
+            while let Some(msg) = rx_stream.next().await {
+                yield msg;
+            }
+        };
+        s.boxed()
+    }
+}
+
+pub struct GenericSyncRecipe<M, F> {
+    f: Option<F>,
+    _marker: PhantomData<fn() -> M>,
+}
+
+impl<M, F> GenericSyncRecipe<M, F>
+where
+    M: Clone + Send + Sync + 'static,
+    F: FnOnce(UnboundedSender<M>) + Send + 'static,
+{
+    pub fn new(f: F) -> Self {
+        Self {
+            f: Some(f),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<M, F> Recipe for GenericSyncRecipe<M, F>
+where
+    M: Clone + Send + Sync + 'static,
+    F: FnOnce(UnboundedSender<M>) + Send + 'static,
+{
+    type Output = M;
+
+    fn stream(self: Box<Self>) -> futures::stream::BoxStream<'static, M> {
+        let (tx, rx) = unbounded_channel::<M>();
+        let mut f_opt = self.f;
+        let s = stream! {
+            if let Some(f) = f_opt.take() {
+                tokio::task::spawn_blocking(move || {
+                    f(tx);
                 });
             }
 

@@ -1,6 +1,6 @@
 use axum::{response::Html, routing::get, Router};
 use flemish::{
-    subscription::GenericAsyncRecipe, theme::color_themes, view::*, Settings, Subscription,
+    theme::color_themes, view::*, Settings, Subscription,
 };
 
 fn main() {
@@ -31,7 +31,7 @@ impl App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        Subscription::from_recipe(GenericAsyncRecipe::new(launch_server)).map(Message::ServerHit)
+        Subscription::run_async(launch_server).map(Message::ServerHit)
     }
 
     fn update(&mut self, msg: Message) {
@@ -63,5 +63,6 @@ async fn launch_server(tx: tokio::sync::mpsc::UnboundedSender<String>) {
         tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap(),
         app,
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 }
