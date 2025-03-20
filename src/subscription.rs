@@ -6,10 +6,14 @@ use std::{
     time::{Duration, Instant},
 };
 
-use fltk::{app::Sender, enums::Event, prelude::*};
+use fltk::{app::Sender, enums::Event};
 use futures::{stream::BoxStream, StreamExt};
 use tokio::task;
+use tokio_stream::wrappers::UnboundedReceiverStream;
+use tokio::sync::mpsc::{UnboundedSender, unbounded_channel};
 use async_stream::stream;
+use std::future::Future;
+use std::marker::PhantomData;
 
 pub trait Recipe {
     type Output: Clone + Send + Sync + 'static;
@@ -227,6 +231,52 @@ where
         let s = stream! {
             while let Some(value_in) = inner_stream.next().await {
                 yield mapper(value_in);
+            }
+        };
+        s.boxed()
+    }
+}
+
+pub struct GenericAsyncRecipe<M, F> {
+    f: Option<F>,
+    _marker: PhantomData<fn() -> M>,
+}
+
+impl<M, F, Fut> GenericAsyncRecipe<M, F>
+where
+    M: Clone + Send + Sync + 'static,
+    F: FnOnce(UnboundedSender<M>) -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = ()> + Send + 'static,
+{
+    pub fn new(f: F) -> Self {
+        Self {
+            f: Some(f),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<M, F, Fut> Recipe for GenericAsyncRecipe<M, F>
+where
+    M: Clone + Send + Sync + 'static,
+    F: FnOnce(UnboundedSender<M>) -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = ()> + Send + 'static,
+{
+    type Output = M;
+
+    fn stream(self: Box<Self>) -> futures::stream::BoxStream<'static, M> {
+        let (tx, rx) = unbounded_channel::<M>();
+        let mut f_opt = self.f;
+        let s = stream! {
+            if let Some(f) = f_opt.take() {
+                tokio::task::spawn(async move {
+                    f(tx).await;
+                });
+            }
+
+            let mut rx_stream = UnboundedReceiverStream::new(rx);
+            while let Some(msg) = rx_stream.next().await {
+                yield msg;
             }
         };
         s.boxed()

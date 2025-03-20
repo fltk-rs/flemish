@@ -1,9 +1,7 @@
-use flemish::{theme::color_themes, view::*, Settings, Subscription};
-use std::net::SocketAddr;
-use std::time::Instant;
-
-mod recipe;
-use recipe::AxumServerRecipe;
+use axum::{response::Html, routing::get, Router};
+use flemish::{
+    subscription::GenericAsyncRecipe, theme::color_themes, view::*, Settings, Subscription,
+};
 
 fn main() {
     flemish::application("Axum Demo", App::update, App::view)
@@ -33,10 +31,7 @@ impl App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        let recipe = AxumServerRecipe {
-            addr: String::from("0.0.0.0:3000"),
-        };
-        Subscription::from_recipe(recipe).map(Message::ServerHit)
+        Subscription::from_recipe(GenericAsyncRecipe::new(launch_server)).map(Message::ServerHit)
     }
 
     fn update(&mut self, msg: Message) {
@@ -51,4 +46,22 @@ impl App {
     fn view(&self) -> View<Message> {
         Frame::new(&format!("Last request: {}", self.last_req)).view()
     }
+}
+
+async fn launch_server(tx: tokio::sync::mpsc::UnboundedSender<String>) {
+    let app = Router::new().route(
+        "/",
+        get({
+            let tx = tx.clone();
+            move || {
+                let _ = tx.send("Got request to /".into());
+                async { Html("Hello from Axum + Flemish!") }
+            }
+        }),
+    );
+    axum::serve(
+        tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap(),
+        app,
+    )
+    .await.unwrap();
 }
