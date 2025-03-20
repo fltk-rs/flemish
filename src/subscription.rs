@@ -1,24 +1,36 @@
+use async_stream::stream;
+use fltk::{app::Sender, enums::Event};
+use futures::{stream::BoxStream, StreamExt};
+use fxhash::FxHasher;
 use std::{
+    any::TypeId,
+    hash::{Hash, Hasher},
+    marker::PhantomData,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, OnceLock,
     },
     time::{Duration, Instant},
 };
-
-use async_stream::stream;
-use fltk::{app::Sender, enums::Event};
-use futures::{stream::BoxStream, StreamExt};
-use std::future::Future;
-use std::marker::PhantomData;
-use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
-use tokio::task;
+use tokio::{
+    sync::mpsc::{unbounded_channel, UnboundedSender},
+    task,
+};
 use tokio_stream::wrappers::UnboundedReceiverStream;
+
+pub(crate) static EVENTS_CONTEXT: OnceLock<Option<EventsContext>> = OnceLock::new();
+
+pub(crate) struct EventsContext {
+    pub(crate) last_event: Arc<std::sync::atomic::AtomicI32>,
+    pub(crate) current_event: Arc<std::sync::atomic::AtomicI32>,
+}
 
 pub trait Recipe {
     type Output: Clone + Send + Sync + 'static;
 
     fn stream(self: Box<Self>) -> BoxStream<'static, Self::Output>;
+
+    fn hash(&self, state: &mut FxHasher);
 }
 
 pub enum Subscription<M>
@@ -50,7 +62,7 @@ where
         }
     }
 
-    pub fn run<F, Fut>(f: F) -> Self
+    pub fn run<F>(f: F) -> Self
     where
         F: FnOnce(UnboundedSender<M>) + Send + Sync + 'static,
     {
@@ -60,7 +72,7 @@ where
     pub fn run_async<F, Fut>(f: F) -> Self
     where
         F: FnOnce(UnboundedSender<M>) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        Fut: std::future::Future<Output = ()> + Send + 'static,
     {
         Subscription::from_recipe(GenericAsyncRecipe::new(f))
     }
@@ -111,64 +123,61 @@ pub fn batch<M: Send + Sync>(subs: Vec<Subscription<M>>) -> Vec<Subscription<M>>
     subs
 }
 
-pub fn start_subscription<M>(
-    win: &mut fltk::window::Window,
-    subscriptions: Vec<Subscription<M>>,
-    sender: Sender<M>,
-) where
+pub(crate) fn spawn_new_subscription<M>(sub: Subscription<M>, sender: Sender<M>) -> Subscription<M>
+where
     M: Clone + Send + Sync + 'static,
 {
-    use fltk::prelude::WidgetBase;
+    match sub {
+        Subscription::None => Subscription::None,
+        Subscription::Recipe {
+            recipe,
+            cancel_flag,
+        } => {
+            let local_cancel = cancel_flag.clone();
 
-    let last_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
-    let current_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
+            let mut stream = recipe.stream();
 
-    win.handle({
-        let current_event = current_event.clone();
-        move |_w, ev| {
-            if ev != Event::NoEvent && ev != Event::Resize && ev != Event::Move {
-                current_event.store(ev.bits(), Ordering::Relaxed);
-            }
-            false
-        }
-    });
-
-    EVENTS_CONTEXT
-        .set(Some(EventsContext {
-            last_event: last_event.clone(),
-            current_event: current_event.clone(),
-        }))
-        .ok();
-
-    for sub in subscriptions {
-        match sub {
-            Subscription::None => {}
-            Subscription::Recipe {
-                recipe,
-                cancel_flag,
-            } => {
-                let mut stream = recipe.stream();
-                let sender = sender.clone();
-                task::spawn(async move {
-                    while let Some(msg) = stream.next().await {
-                        if let Some(flag) = &cancel_flag {
-                            if flag.load(Ordering::Relaxed) {
-                                break;
-                            }
+            task::spawn(async move {
+                while let Some(msg) = stream.next().await {
+                    if let Some(cf) = &local_cancel {
+                        if cf.load(std::sync::atomic::Ordering::Relaxed) {
+                            break;
                         }
-                        sender.send(msg.clone());
                     }
-                });
-            }
+                    sender.send(msg.clone());
+                }
+            });
+
+            Subscription::None
         }
     }
 }
 
-static EVENTS_CONTEXT: OnceLock<Option<EventsContext>> = OnceLock::new();
+pub(crate) fn cancel_subscription<M>(sub: Option<Subscription<M>>)
+where
+    M: Clone + Send + Sync + 'static,
+{
+    if let Some(Subscription::Recipe {
+        cancel_flag: Some(cf),
+        ..
+    }) = sub
+    {
+        cf.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+}
 
-struct EventsContext {
-    last_event: Arc<std::sync::atomic::AtomicI32>,
-    current_event: Arc<std::sync::atomic::AtomicI32>,
+pub(crate) fn spawn_or_reuse_subscription<M>(sub: &Subscription<M>) -> u64
+where
+    M: Clone + Send + Sync + 'static,
+{
+    match sub {
+        Subscription::None => 0,
+        Subscription::Recipe { recipe, .. } => {
+            let mut hasher = FxHasher::default();
+            recipe.hash(&mut hasher);
+            hasher.finish()
+        }
+    }
 }
 
 struct EveryRecipe {
@@ -188,6 +197,12 @@ impl Recipe for EveryRecipe {
         };
         s.boxed()
     }
+
+    fn hash(&self, state: &mut FxHasher) {
+        TypeId::of::<Self>().hash(state);
+        let nanos = self.duration.as_nanos() as u64;
+        nanos.hash(state);
+    }
 }
 
 struct EventsRecipe {
@@ -200,30 +215,30 @@ impl Recipe for EventsRecipe {
     fn stream(self: Box<Self>) -> BoxStream<'static, Event> {
         let interval = self.interval;
         let s = stream! {
-            let context_opt = EVENTS_CONTEXT.get();
-            if context_opt.is_none() || context_opt.unwrap().is_none() {
-                return;
-            }
-            let context = context_opt.unwrap().as_ref().unwrap();
-
-            let last_event = &context.last_event;
-            let current_event = &context.current_event;
-
-            loop {
-                tokio::time::sleep(interval).await;
-                let c = current_event.load(Ordering::Relaxed);
-                let l = last_event.load(Ordering::Relaxed);
-                if c != l {
-                    last_event.store(c, Ordering::Relaxed);
-
-                    let ev = Event::from_i32(c);
-                    if ev != Event::NoEvent {
-                        yield ev;
+            if let Some(Some(context)) = EVENTS_CONTEXT.get() {
+                let last_event = &context.last_event;
+                let current_event = &context.current_event;
+                loop {
+                    tokio::time::sleep(interval).await;
+                    let c = current_event.load(Ordering::Relaxed);
+                    let l = last_event.load(Ordering::Relaxed);
+                    if c != l {
+                        last_event.store(c, Ordering::Relaxed);
+                        let ev = Event::from_i32(c);
+                        if ev != Event::NoEvent {
+                            yield ev;
+                        }
                     }
                 }
             }
         };
         s.boxed()
+    }
+
+    fn hash(&self, state: &mut FxHasher) {
+        TypeId::of::<Self>().hash(state);
+        let nanos = self.interval.as_nanos() as u64;
+        nanos.hash(state);
     }
 }
 
@@ -248,13 +263,17 @@ where
     fn stream(self: Box<Self>) -> BoxStream<'static, Out> {
         let mapper = self.mapper.clone();
         let mut inner_stream = self.inner.stream();
-
         let s = stream! {
             while let Some(value_in) = inner_stream.next().await {
                 yield mapper(value_in);
             }
         };
         s.boxed()
+    }
+
+    fn hash(&self, state: &mut FxHasher) {
+        self.inner.hash(state);
+        TypeId::of::<F>().hash(state);
     }
 }
 
@@ -267,7 +286,7 @@ impl<M, F, Fut> GenericAsyncRecipe<M, F>
 where
     M: Clone + Send + Sync + 'static,
     F: FnOnce(UnboundedSender<M>) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = ()> + Send + 'static,
+    Fut: std::future::Future<Output = ()> + Send + 'static,
 {
     pub fn new(f: F) -> Self {
         Self {
@@ -281,11 +300,11 @@ impl<M, F, Fut> Recipe for GenericAsyncRecipe<M, F>
 where
     M: Clone + Send + Sync + 'static,
     F: FnOnce(UnboundedSender<M>) -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = ()> + Send + 'static,
+    Fut: std::future::Future<Output = ()> + Send + 'static,
 {
     type Output = M;
 
-    fn stream(self: Box<Self>) -> futures::stream::BoxStream<'static, M> {
+    fn stream(self: Box<Self>) -> BoxStream<'static, M> {
         let (tx, rx) = unbounded_channel::<M>();
         let mut f_opt = self.f;
         let s = stream! {
@@ -294,13 +313,16 @@ where
                     f(tx).await;
                 });
             }
-
             let mut rx_stream = UnboundedReceiverStream::new(rx);
             while let Some(msg) = rx_stream.next().await {
                 yield msg;
             }
         };
         s.boxed()
+    }
+
+    fn hash(&self, state: &mut FxHasher) {
+        TypeId::of::<F>().hash(state);
     }
 }
 
@@ -329,7 +351,7 @@ where
 {
     type Output = M;
 
-    fn stream(self: Box<Self>) -> futures::stream::BoxStream<'static, M> {
+    fn stream(self: Box<Self>) -> BoxStream<'static, M> {
         let (tx, rx) = unbounded_channel::<M>();
         let mut f_opt = self.f;
         let s = stream! {
@@ -338,12 +360,15 @@ where
                     f(tx);
                 });
             }
-
             let mut rx_stream = UnboundedReceiverStream::new(rx);
             while let Some(msg) = rx_stream.next().await {
                 yield msg;
             }
         };
         s.boxed()
+    }
+
+    fn hash(&self, state: &mut FxHasher) {
+        TypeId::of::<F>().hash(state);
     }
 }

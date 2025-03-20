@@ -16,21 +16,28 @@ pub fn main() {
 struct Timer {
     value: i32,
     time: Instant,
+    duration: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
 enum Message {
     Tick(std::time::Instant),
+    Reduce,
 }
 
 impl Timer {
     fn new() -> Self {
         let value = 0;
         let time = Instant::now();
-        Self { value, time }
+        let duration = 1000;
+        Self {
+            value,
+            time,
+            duration,
+        }
     }
     fn subscription(&self) -> Subscription<Message> {
-        Subscription::every(std::time::Duration::from_secs(1)).map(Message::Tick)
+        Subscription::every(std::time::Duration::from_millis(self.duration)).map(Message::Tick)
     }
 
     fn update(&mut self, message: Message) {
@@ -39,10 +46,17 @@ impl Timer {
                 println!("{:?}", i.duration_since(self.time));
                 self.value += 1;
             }
+            Message::Reduce => {
+                self.duration -= 100;
+            }
         }
     }
 
     fn view(&self) -> View<Message> {
-        Frame::new(&self.value.to_string()).view()
+        Column::new(&[
+            Frame::new(&self.value.to_string()).view(),
+            Button::new("Reduce duration", Message::Reduce).view(),
+        ])
+        .view()
     }
 }

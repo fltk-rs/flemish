@@ -1,7 +1,5 @@
-use fltk::prelude::*;
-use fltk::*;
-use std::cell::RefCell;
-use std::rc::Rc;
+use fltk::{enums::Event, prelude::*, *};
+use std::sync::{atomic::Ordering, Arc};
 
 use crate::id;
 use crate::settings::Settings;
@@ -142,6 +140,7 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
         };
         (a, win, rt)
     }
+
     pub fn run_with<F: Fn() -> T>(self, init_fn: F) {
         let (a, mut win, rt) = self.init();
 
@@ -152,33 +151,84 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
         win.end();
         win.show();
 
+        let last_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
+        let current_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
+
+        win.handle({
+            let current_event = current_event.clone();
+            move |_w, ev| {
+                if ev != Event::NoEvent && ev != Event::Move {
+                    current_event.store(ev.bits(), Ordering::Relaxed);
+                }
+                false
+            }
+        });
+
+        EVENTS_CONTEXT
+            .set(Some(EventsContext {
+                last_event,
+                current_event,
+            }))
+            .ok();
+
         if let Some(mut first_child) = win.child(0) {
             first_child.resize(0, 0, win.w(), win.h());
         }
 
         let (s, r) = app::channel::<Message>();
+
+        let mut current_sub: Option<Subscription<Message>> = None;
+        let mut current_hash: u64 = 0;
+
         rt.block_on(async {
-            if let Some(subscription) = self.subscription {
-                start_subscription(&mut win, vec![subscription(&t)], s.clone());
+            if let Some(sub_fn) = self.subscription {
+                let sub = sub_fn(&t);
+
+                let new_hash = spawn_or_reuse_subscription(&sub);
+
+                if new_hash != current_hash {
+                    let spawned_sub = spawn_new_subscription(sub, s.clone());
+                    current_sub = Some(spawned_sub);
+                    current_hash = new_hash;
+                } else {
+                    current_sub = Some(sub);
+                }
             }
 
-            let state = Rc::new(RefCell::new(self));
+            let state = std::rc::Rc::new(std::cell::RefCell::new(self));
 
             while a.wait() {
                 if let Some(msg) = r.recv() {
                     let mut st = state.borrow_mut();
+
                     vdom.dispatch(msg.clone());
+
                     let command = st.update(&mut t, msg.clone());
-
                     command.execute(s.clone());
-                    let new_vdom = st.view_(&t);
 
+                    let new_vdom = st.view_(&t);
                     vdom.patch(new_vdom);
                     app::redraw();
+
+                    if let Some(sub_fn) = st.subscription {
+                        let new_sub = sub_fn(&t);
+
+                        let new_hash = spawn_or_reuse_subscription(&new_sub);
+
+                        if new_hash != current_hash {
+                            cancel_subscription(current_sub.take());
+                            let spawned_sub = spawn_new_subscription(new_sub, s.clone());
+                            current_sub = Some(spawned_sub);
+                            current_hash = new_hash;
+                        } else {
+                            current_sub = Some(new_sub);
+                        }
+                    }
                 }
             }
         });
     }
+
     pub fn run(self)
     where
         T: Default,
