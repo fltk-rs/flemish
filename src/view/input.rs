@@ -19,6 +19,7 @@ macro_rules! define_input {
             typ: VNodeType,
             wprops: WidgetProps,
             iprops: InputProps,
+            tprops: TextProps,
             #[allow(clippy::type_complexity)]
             change_cb: Option<Rc<Box<dyn Fn(String) -> Message>>>,
             enter_cb: Option<Rc<Box<dyn Fn(String) -> Message>>>,
@@ -33,6 +34,7 @@ macro_rules! define_input {
                     iprops: InputProps {
                         value: value.to_string(),
                     },
+                    tprops: TextProps::default(),
                     change_cb: None,
                     enter_cb: None,
                 }
@@ -59,6 +61,7 @@ macro_rules! define_input {
             fn mount(&self, dom: &VirtualDom<Message>) {
                 let mut b = input::$name::default();
                 default_mount!(b, self, dom, $name, {
+                    set_tprops!(b, self.tprops);
                     b.set_value(&self.iprops.value);
                     let change_cb = self.change_cb.clone();
                     let enter_cb = self.enter_cb.clone();
@@ -81,6 +84,7 @@ macro_rules! define_input {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();
+                    update_tprops!(b, self.tprops, old.tprops);
                     let oldi = &old.iprops;
                     let newi = &self.iprops;
                     if oldi.value != newi.value {

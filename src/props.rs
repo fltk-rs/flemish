@@ -22,6 +22,13 @@ pub struct WidgetProps {
     pub h: Option<i32>,
 }
 
+#[derive(Default, Clone, Debug, PartialEq)]
+pub struct TextProps {
+    pub text_color: Option<enums::Color>,
+    pub text_font: Option<enums::Font>,
+    pub text_size: Option<i32>,
+}
+
 #[derive(Clone)]
 pub struct GroupProps<Message> {
     pub children: Vec<View<Message>>,
@@ -110,6 +117,26 @@ where
         }
     }
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! set_tprops {
+    ($w: ident, $tprops: expr) => {
+        if let Some(c) = &$tprops.text_color {
+            $w.set_text_color(*c);
+        }
+
+        if let Some(f) = &$tprops.text_font {
+            $w.set_text_font(*f);
+        }
+
+        if let Some(s) = &$tprops.text_size {
+            $w.set_text_size(*s);
+        }
+    };
+}
+
+pub use set_tprops;
 
 pub fn update_wprops<W>(w: &mut W, old_wprops: &WidgetProps, new_wprops: &WidgetProps)
 where
@@ -227,3 +254,29 @@ where
         }
     }
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! update_tprops {
+    ($w: ident, $old_tprops: expr, $new_tprops: expr) => {
+        if $old_tprops.text_color != $new_tprops.text_color {
+            if let Some(c) = &$new_tprops.text_color {
+                $w.set_text_color(*c);
+            }
+        }
+
+        if $old_tprops.text_font != $new_tprops.text_font {
+            if let Some(f) = &$new_tprops.text_font {
+                $w.set_text_font(*f);
+            }
+        }
+
+        if $old_tprops.text_size != $new_tprops.text_size {
+            if let Some(s) = &$new_tprops.text_size {
+                $w.set_text_size(*s);
+            }
+        }
+    };
+}
+
+pub use update_tprops;

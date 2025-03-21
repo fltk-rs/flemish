@@ -19,6 +19,7 @@ macro_rules! define_output {
             typ: VNodeType,
             wprops: WidgetProps,
             iprops: OutputProps,
+            tprops: TextProps,
             phantom: PhantomData<Message>,
         }
 
@@ -31,6 +32,7 @@ macro_rules! define_output {
                     iprops: OutputProps {
                         value: value.to_string(),
                     },
+                    tprops: TextProps::default(),
                     phantom: PhantomData,
                 }
             }
@@ -44,7 +46,7 @@ macro_rules! define_output {
             fn mount(&self, dom: &VirtualDom<Message>) {
                 let mut b = output::$name::default();
                 default_mount!(b, self, dom, $name, {
-                    set_wprops(&mut b, &self.wprops);
+                    set_tprops!(b, self.tprops);
                     b.set_value(&self.iprops.value);
                 });
             }
@@ -52,6 +54,7 @@ macro_rules! define_output {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();
+                    update_tprops!(b, self.tprops, old.tprops);
                     let oldi = &old.iprops;
                     let newi = &self.iprops;
                     if oldi.value != newi.value {

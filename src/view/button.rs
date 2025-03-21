@@ -10,6 +10,7 @@ use std::rc::Rc;
 struct ButtonProps {
     value: bool,
     down_box: Option<enums::FrameType>,
+    shortcut: Option<enums::Shortcut>,
 }
 
 fn set_bprops<W>(w: &mut W, wprops: &ButtonProps)
@@ -18,6 +19,9 @@ where
 {
     if let Some(b) = &wprops.down_box {
         w.set_down_frame(*b);
+    }
+    if let Some(b) = &wprops.shortcut {
+        w.set_shortcut(*b);
     }
 }
 
@@ -28,6 +32,11 @@ where
     if old_wprops.down_box != new_wprops.down_box {
         if let Some(c) = &new_wprops.down_box {
             w.set_down_frame(*c);
+        }
+    }
+    if old_wprops.shortcut != new_wprops.shortcut {
+        if let Some(c) = &new_wprops.shortcut {
+            w.set_shortcut(*c);
         }
     }
 }
@@ -104,6 +113,7 @@ macro_rules! define_button {
                     bprops: ButtonProps {
                         value,
                         down_box: None,
+                        shortcut: None,
                     },
                     on_change: None,
                 }

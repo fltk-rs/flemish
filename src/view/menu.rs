@@ -37,6 +37,7 @@ macro_rules! define_menu {
             node_id: usize,
             typ: VNodeType,
             wprops: WidgetProps,
+            tprops: TextProps,
             items: Vec<MenuItem<Message>>,
         }
 
@@ -46,6 +47,7 @@ macro_rules! define_menu {
                     node_id: 0,
                     typ: VNodeType::$name,
                     wprops: WidgetProps::default(),
+                    tprops: TextProps::default(),
                     items: items.to_vec(),
                 }
             }
@@ -59,6 +61,7 @@ macro_rules! define_menu {
             fn mount(&self, dom: &VirtualDom<Message>) {
                 let mut b = menu::$name::default();
                 default_mount!(b, self, dom, $name, {
+                    set_tprops!(b, self.tprops);
                     for item in &self.items {
                         let sender: app::Sender<Message> = app::Sender::get();
                         b.add_emit(
@@ -74,6 +77,8 @@ macro_rules! define_menu {
             fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
+                    let old: &$name<Message> = old.as_any().downcast_ref().unwrap();
+                    update_tprops!(b, self.tprops, old.tprops);
                     // TODO: check if actually things changed!
                     b.clear();
                     for item in &self.items {

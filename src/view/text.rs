@@ -31,6 +31,7 @@ macro_rules! define_text {
             typ: VNodeType,
             wprops: WidgetProps,
             iprops: DisplayOpts,
+            tprops: TextProps,
             #[allow(clippy::type_complexity)]
             change_cb: Option<Rc<Box<dyn Fn(String) -> Message>>>,
             on_command: Option<Rc<Box<dyn Fn(Message) -> Option<TextEditorCommand<Message>>>>>,
@@ -46,6 +47,7 @@ macro_rules! define_text {
                         value: value.to_string(),
                         ..Default::default()
                     },
+                    tprops: TextProps::default(),
                     change_cb: None,
                     on_command: None,
                 }
@@ -89,6 +91,7 @@ macro_rules! define_text {
                 let ed = b.clone();
                 default_mount!(b, self, dom, $name, {
                     set_wprops(&mut b, &self.wprops);
+                    set_tprops!(b, self.tprops);
                     b.set_linenumber_width(self.iprops.linenumber_width);
                 });
                 if let Some(ed) = text::TextEditor::from_dyn_widget(&ed) {
@@ -119,6 +122,7 @@ macro_rules! define_text {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();
+                    update_tprops!(b, self.tprops, old.tprops);
                     let oldi = &old.iprops;
                     let newi = &self.iprops;
                     if oldi.linenumber_width != newi.linenumber_width {

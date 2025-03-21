@@ -6,11 +6,14 @@ use crate::widgets::WidgetUnion;
 use fltk::{prelude::*, *};
 use std::marker::PhantomData;
 
+pub use fltk::misc::ClockType;
+
 #[derive(Clone)]
 pub struct Clock<Message> {
     node_id: usize,
     typ: VNodeType,
     wprops: WidgetProps,
+    clock_type: ClockType,
     phantom: PhantomData<Message>,
 }
 
@@ -23,6 +26,7 @@ impl<Message> Clock<Message> {
                 label: Some(label.to_string()),
                 ..Default::default()
             },
+            clock_type: ClockType::Square,
             phantom: PhantomData,
         }
     }
@@ -35,11 +39,17 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Clock<Message> {
     }
     fn mount(&self, dom: &VirtualDom<Message>) {
         let mut b = misc::Clock::default();
+        b.set_type(self.clock_type);
         default_mount!(b, self, dom, Clock);
     }
     fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
-        default_patch!(b, self, old, dom, Clock);
+        default_patch!(b, self, old, dom, Clock, {
+            let old: &Clock<Message> = old.as_any().downcast_ref().unwrap();
+            if self.clock_type != old.clock_type {
+                b.set_type(self.clock_type);
+            }
+        });
     }
 }
 
@@ -67,6 +77,7 @@ pub struct Chart<Message> {
     node_id: usize,
     typ: VNodeType,
     wprops: WidgetProps,
+    tprops: TextProps,
     phantom: PhantomData<Message>,
     chart_type: fltk::misc::ChartType,
     bounds: (f64, f64),
@@ -79,6 +90,7 @@ impl<Message> Chart<Message> {
             node_id: 0,
             typ: VNodeType::Chart,
             wprops: WidgetProps::default(),
+            tprops: TextProps::default(),
             phantom: PhantomData,
             chart_type: fltk::misc::ChartType::Bar,
             bounds: (0.0, 100.0),
@@ -96,6 +108,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Chart<Message> {
         let mut b = misc::Chart::default();
         default_mount!(b, self, dom, Chart, {
             b.set_type(self.chart_type);
+            set_tprops!(b, self.tprops);
             b.set_bounds(self.bounds.0, self.bounds.1);
             for item in &self.items {
                 b.add(item.value, &item.label, item.col);
@@ -106,6 +119,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Chart<Message> {
         let b;
         default_patch!(b, self, old, dom, Chart, {
             let old: &Chart<Message> = old.as_any().downcast_ref().unwrap();
+            update_tprops!(b, self.tprops, old.tprops);
             if self.chart_type != old.chart_type {
                 b.set_type(self.chart_type);
             }
@@ -169,6 +183,7 @@ pub struct Spinner<Message> {
     node_id: usize,
     typ: VNodeType,
     wprops: WidgetProps,
+    tprops: TextProps,
     phantom: PhantomData<Message>,
 }
 
@@ -181,6 +196,7 @@ impl<Message> Spinner<Message> {
                 label: Some(label.to_string()),
                 ..Default::default()
             },
+            tprops: TextProps::default(),
             phantom: PhantomData,
         }
     }
@@ -193,11 +209,15 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Spinner<Message>
     }
     fn mount(&self, dom: &VirtualDom<Message>) {
         let mut b = misc::Spinner::default();
+        set_tprops!(b, self.tprops);
         default_mount!(b, self, dom, Spinner);
     }
     fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
-        default_patch!(b, self, old, dom, Spinner);
+        default_patch!(b, self, old, dom, Spinner, {
+            let old: &Spinner<Message> = old.as_any().downcast_ref().unwrap();
+            update_tprops!(b, self.tprops, old.tprops);
+        });
     }
 }
 
@@ -206,6 +226,7 @@ pub struct HelpView<Message> {
     node_id: usize,
     typ: VNodeType,
     wprops: WidgetProps,
+    tprops: TextProps,
     phantom: PhantomData<Message>,
 }
 
@@ -218,6 +239,7 @@ impl<Message> HelpView<Message> {
                 label: Some(label.to_string()),
                 ..Default::default()
             },
+            tprops: TextProps::default(),
             phantom: PhantomData,
         }
     }
@@ -230,11 +252,15 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for HelpView<Message
     }
     fn mount(&self, dom: &VirtualDom<Message>) {
         let mut b = misc::HelpView::default();
+        set_tprops!(b, self.tprops);
         default_mount!(b, self, dom, HelpView);
     }
     fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
-        default_patch!(b, self, old, dom, HelpView);
+        default_patch!(b, self, old, dom, HelpView, {
+            let old: &HelpView<Message> = old.as_any().downcast_ref().unwrap();
+            update_tprops!(b, self.tprops, old.tprops);
+        });
     }
 }
 
@@ -243,6 +269,7 @@ pub struct InputChoice<Message> {
     node_id: usize,
     typ: VNodeType,
     wprops: WidgetProps,
+    tprops: TextProps,
     phantom: PhantomData<Message>,
 }
 
@@ -255,6 +282,7 @@ impl<Message> InputChoice<Message> {
                 label: Some(label.to_string()),
                 ..Default::default()
             },
+            tprops: TextProps::default(),
             phantom: PhantomData,
         }
     }
@@ -267,10 +295,14 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for InputChoice<Mess
     }
     fn mount(&self, dom: &VirtualDom<Message>) {
         let mut b = misc::InputChoice::default();
+        set_tprops!(b, self.tprops);
         default_mount!(b, self, dom, InputChoice);
     }
     fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
-        default_patch!(b, self, old, dom, InputChoice);
+        default_patch!(b, self, old, dom, InputChoice, {
+            let old: &InputChoice<Message> = old.as_any().downcast_ref().unwrap();
+            update_tprops!(b, self.tprops, old.tprops);
+        });
     }
 }
