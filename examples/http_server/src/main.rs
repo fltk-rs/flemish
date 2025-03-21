@@ -1,4 +1,4 @@
-use axum::{response::Html, routing::get, Router};
+use axum::{response::Html, routing::get, Router, extract::Path};
 use flemish::{
     theme::color_themes, view::*, Settings, Subscription,
 };
@@ -55,9 +55,18 @@ async fn launch_server(tx: tokio::sync::mpsc::UnboundedSender<String>) {
             let tx = tx.clone();
             move || {
                 let _ = tx.send("Got request to /".into());
-                async { Html("Hello from Axum + Flemish!") }
+                async { Html("Hello from Axum + Flemish!\n") }
             }
         }),
+    ).route(
+        "/{p}",
+        get({
+            let tx = tx.clone();
+            move |path: Path<String>| {
+                let _ = tx.send(format!("Got request to /{}", path.0));
+                async { Html("Hello from Axum + Flemish!\n") }
+            }
+        })
     );
     axum::serve(
         tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap(),
