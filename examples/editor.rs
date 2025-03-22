@@ -3,7 +3,7 @@ use flemish::{
     enums::{Align, Shortcut},
     theme::color_themes,
     view::*,
-    Scheme, Settings, Task,
+    Settings, Task,
 };
 use std::path::PathBuf;
 
@@ -13,9 +13,7 @@ pub fn main() {
         .settings(Settings {
             size: (800, 600),
             resizable: true,
-            color_map: Some(color_themes::TAN_THEME),
-            scheme: Some(Scheme::Gtk),
-            menu_linespacing: Some(14),
+            color_map: color_themes::TAN_THEME,
             ignore_esc_close: true,
             on_close: Some(Message::Quit),
             ..Default::default()

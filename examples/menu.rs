@@ -5,7 +5,6 @@ pub fn main() {
         .settings(Settings {
             size: (300, 300),
             resizable: true,
-            menu_linespacing: Some(14),
             ignore_esc_close: true,
             ..Default::default()
         })

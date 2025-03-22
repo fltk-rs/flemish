@@ -1,11 +1,10 @@
-use flemish::{theme::color_themes, view::*, Settings, Subscription, Task};
+use flemish::{view::*, Settings, Subscription, Task};
 
 pub fn main() {
     flemish::application("timer", Timer::update, Timer::view)
         .settings(Settings {
             size: (300, 100),
             resizable: true,
-            color_map: Some(color_themes::BLACK_THEME),
             ..Default::default()
         })
         .subscription(Timer::subscription)

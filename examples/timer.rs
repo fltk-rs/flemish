@@ -1,4 +1,4 @@
-use flemish::{theme::color_themes, view::*, Settings, Subscription};
+use flemish::{view::*, Settings, Subscription};
 use std::time::Instant;
 
 pub fn main() {
@@ -6,7 +6,6 @@ pub fn main() {
         .settings(Settings {
             size: (300, 100),
             resizable: true,
-            color_map: Some(color_themes::BLACK_THEME),
             ..Default::default()
         })
         .subscription(Timer::subscription)

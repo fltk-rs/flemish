@@ -1,0 +1,9 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = "0.12"
+flemish = { path = "../.." }
+anyhow = "1"

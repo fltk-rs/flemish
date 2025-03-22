@@ -53,11 +53,8 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
         let a = app::App::default();
         let binding = Settings::default();
         let settings: &Settings<Message> = self.settings.as_ref().unwrap_or(&binding);
-        if let Some(color_map) = settings.color_map {
-            fltk_theme::ColorTheme::from_colormap(color_map).apply();
-        } else {
-            fltk_theme::ColorTheme::from_colormap(fltk_theme::color_themes::BLACK_THEME).apply();
-        }
+
+        fltk_theme::ColorTheme::from_colormap(settings.color_map).apply();
 
         if let Some(color) = settings.background {
             let c = color.to_rgb();
@@ -79,25 +76,21 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
             let c = color.to_rgb();
             app::set_inactive_color(c.0, c.1, c.2);
         }
-        if settings.font_size != 0 {
-            app::set_font_size(settings.font_size);
-        }
+        app::set_font_size(settings.font_size);
+
         if let Some(theme) = settings.theme {
             fltk_theme::WidgetTheme::new(theme).apply();
         }
 
-        if let Some(scheme) = settings.scheme {
-            app::set_scheme(scheme);
-        }
+        app::set_scheme(settings.scheme);
+
         if let Some(font) = settings.font {
             app::set_font(font);
         }
-        if let Some(ms) = settings.menu_linespacing {
-            app::set_menu_linespacing(ms);
-        }
+
+        app::set_menu_linespacing(settings.menu_linespacing);
+
         let (w, h) = settings.size;
-        let w = if w == 0 { 400 } else { w };
-        let h = if h == 0 { 300 } else { h };
         let (x, y) = settings.pos;
         let mut win = window::Window::default()
             .with_size(w, h)

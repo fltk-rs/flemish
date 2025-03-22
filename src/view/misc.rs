@@ -227,19 +227,18 @@ pub struct HelpView<Message> {
     typ: VNodeType,
     wprops: WidgetProps,
     tprops: TextProps,
+    value: String,
     phantom: PhantomData<Message>,
 }
 
 impl<Message> HelpView<Message> {
-    pub fn new(label: &str) -> Self {
+    pub fn new(content: &str) -> Self {
         Self {
             node_id: 0,
             typ: VNodeType::HelpView,
-            wprops: WidgetProps {
-                label: Some(label.to_string()),
-                ..Default::default()
-            },
+            wprops: WidgetProps::default(),
             tprops: TextProps::default(),
+            value: content.to_string(),
             phantom: PhantomData,
         }
     }
@@ -253,6 +252,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for HelpView<Message
     fn mount(&self, dom: &VirtualDom<Message>) {
         let mut b = misc::HelpView::default();
         set_tprops!(b, self.tprops);
+        b.set_value(&self.value);
         default_mount!(b, self, dom, HelpView);
     }
     fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
@@ -260,6 +260,9 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for HelpView<Message
         default_patch!(b, self, old, dom, HelpView, {
             let old: &HelpView<Message> = old.as_any().downcast_ref().unwrap();
             update_tprops!(b, self.tprops, old.tprops);
+            if self.value != old.value {
+                b.set_value(&self.value);
+            }
         });
     }
 }

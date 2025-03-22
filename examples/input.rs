@@ -1,11 +1,10 @@
-use flemish::{theme::color_themes, view::*, Settings};
+use flemish::{view::*, Settings};
 
 pub fn main() {
     flemish::application("input", State::update, State::view)
         .settings(Settings {
             size: (300, 100),
             resizable: true,
-            color_map: Some(color_themes::BLACK_THEME),
             ..Default::default()
         })
         .run();

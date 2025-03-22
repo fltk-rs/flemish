@@ -1,13 +1,12 @@
-use axum::{response::Html, routing::get, Router, extract::Path};
-use flemish::{
-    theme::color_themes, view::*, Settings, Subscription,
-};
+// Check the requested path using `curl 0.0.0.0:3000/hello` or thru a browser 127.0.0.1:3000/hello for example
+
+use axum::{extract::Path, response::Html, routing::get, Router};
+use flemish::{view::*, Settings, Subscription};
 
 fn main() {
     flemish::application("Axum Demo", App::update, App::view)
         .settings(Settings {
             size: (400, 200),
-            color_map: Some(color_themes::BLACK_THEME),
             ..Default::default()
         })
         .subscription(App::subscription)
@@ -49,25 +48,27 @@ impl App {
 }
 
 async fn launch_server(tx: tokio::sync::mpsc::UnboundedSender<String>) {
-    let app = Router::new().route(
-        "/",
-        get({
-            let tx = tx.clone();
-            move || {
-                let _ = tx.send("Got request to /".into());
-                async { Html("Hello from Axum + Flemish!\n") }
-            }
-        }),
-    ).route(
-        "/{p}",
-        get({
-            let tx = tx.clone();
-            move |path: Path<String>| {
-                let _ = tx.send(format!("Got request to /{}", path.0));
-                async { Html("Hello from Axum + Flemish!\n") }
-            }
-        })
-    );
+    let app = Router::new()
+        .route(
+            "/",
+            get({
+                let tx = tx.clone();
+                move || {
+                    let _ = tx.send("Got request to /".into());
+                    async { Html("Hello from Axum + Flemish!\n") }
+                }
+            }),
+        )
+        .route(
+            "/{p}",
+            get({
+                let tx = tx.clone();
+                move |path: Path<String>| {
+                    let _ = tx.send(format!("Got request to /{}", path.0));
+                    async { Html("Hello from Axum + Flemish!\n") }
+                }
+            }),
+        );
     axum::serve(
         tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap(),
         app,

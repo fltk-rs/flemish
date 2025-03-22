@@ -5,7 +5,7 @@ pub fn main() {
         .settings(Settings {
             size: (300, 100),
             resizable: true,
-            color_map: Some(flemish::theme::color_themes::GRAY_THEME),
+            color_map: flemish::theme::color_themes::GRAY_THEME,
             ..Default::default()
         })
         .run();
