@@ -42,6 +42,7 @@ pub enum VNodeType {
     MultilineOutput,
     Choice,
     SysMenuBar,
+    MenuButton,
     Slider,
     NiceSlider,
     ValueSlider,

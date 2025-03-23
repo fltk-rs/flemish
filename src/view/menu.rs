@@ -100,3 +100,4 @@ macro_rules! define_menu {
 define_menu!(MenuBar);
 define_menu!(SysMenuBar);
 define_menu!(Choice);
+define_menu!(MenuButton);
