@@ -1,3 +1,4 @@
+use crate::image::{Image, IMAGES};
 use crate::vnode::View;
 use fltk::{prelude::*, *};
 
@@ -20,6 +21,8 @@ pub struct WidgetProps {
     pub y: Option<i32>,
     pub w: Option<i32>,
     pub h: Option<i32>,
+    pub image: Option<Image>,
+    pub deimage: Option<Image>,
 }
 
 #[derive(Default, Clone, Debug, PartialEq)]
@@ -114,6 +117,22 @@ where
             w.deactivate();
         } else {
             w.activate();
+        }
+    }
+
+    if let Some(i) = &wprops.image {
+        unsafe {
+            w.set_image(Some(fltk::image::Image::from_image_ptr(
+                IMAGES.lock().unwrap().get(&i.idx).unwrap().as_image_ptr(),
+            )));
+        }
+    }
+
+    if let Some(i) = &wprops.deimage {
+        unsafe {
+            w.set_deimage(Some(fltk::image::Image::from_image_ptr(
+                IMAGES.lock().unwrap().get(&i.idx).unwrap().as_image_ptr(),
+            )));
         }
     }
 }
@@ -251,6 +270,30 @@ where
             } else {
                 w.activate();
             }
+        }
+    }
+
+    if old_wprops.image != new_wprops.image {
+        if let Some(i) = &new_wprops.image {
+            unsafe {
+                w.set_image(Some(fltk::image::Image::from_image_ptr(
+                    IMAGES.lock().unwrap().get(&i.idx).unwrap().as_image_ptr(),
+                )));
+            }
+        } else {
+            w.set_image::<fltk::image::Image>(None);
+        }
+    }
+
+    if old_wprops.deimage != new_wprops.deimage {
+        if let Some(i) = &new_wprops.deimage {
+            unsafe {
+                w.set_deimage(Some(fltk::image::Image::from_image_ptr(
+                    IMAGES.lock().unwrap().get(&i.idx).unwrap().as_image_ptr(),
+                )));
+            }
+        } else {
+            w.set_deimage::<fltk::image::Image>(None);
         }
     }
 }

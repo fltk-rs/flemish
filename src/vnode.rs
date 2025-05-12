@@ -1,4 +1,5 @@
 use crate::id::next_id;
+use crate::image::Image;
 use crate::props::*;
 use crate::vdom::VirtualDom;
 use fltk::enums;
@@ -98,6 +99,8 @@ pub trait HasProps<Message> {
     fn y(self, x: i32) -> Self;
     fn w(self, x: i32) -> Self;
     fn h(self, x: i32) -> Self;
+    fn image(self, i: Option<Image>) -> Self;
+    fn deimage(self, i: Option<Image>) -> Self;
 }
 
 impl<Message: 'static, W: VNode<Message>> HasProps<Message> for W {
@@ -167,6 +170,14 @@ impl<Message: 'static, W: VNode<Message>> HasProps<Message> for W {
     }
     fn h(mut self, x: i32) -> Self {
         self.wprops().h = Some(x);
+        self
+    }
+    fn image(mut self, i: Option<Image>) -> Self {
+        self.wprops().image = i;
+        self
+    }
+    fn deimage(mut self, i: Option<Image>) -> Self {
+        self.wprops().deimage = i;
         self
     }
 }

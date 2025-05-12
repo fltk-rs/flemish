@@ -5,6 +5,7 @@ mod application;
 pub mod dialog;
 pub mod enums;
 mod id;
+mod image;
 pub mod props;
 mod settings;
 pub mod subscription;
@@ -18,6 +19,7 @@ pub mod widgets;
 
 use crate::application::Application;
 pub use fltk::app::Scheme;
+pub use image::Image;
 pub use settings::Settings;
 pub use subscription::Subscription;
 pub use task::Task;
