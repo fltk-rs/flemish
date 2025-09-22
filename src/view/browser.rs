@@ -58,7 +58,7 @@ macro_rules! define_browser {
                     });
                 });
             }
-            fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+            fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();
@@ -90,4 +90,84 @@ define_browser!(SelectBrowser);
 define_browser!(HoldBrowser);
 define_browser!(MultiBrowser);
 define_browser!(FileBrowser);
-// define_browser!(CheckBrowser);
+
+#[derive(Clone)]
+pub struct CheckBrowser<Message> {
+    node_id: usize,
+    typ: VNodeType,
+    wprops: WidgetProps,
+    items: Vec<(String, bool)>,
+    #[allow(clippy::type_complexity)]
+    on_change: Option<Rc<Box<dyn Fn(Vec<i32>) -> Message>>>,
+}
+
+impl<Message: Clone> CheckBrowser<Message> {
+    pub fn new(items: &[(&str, bool)]) -> Self {
+        Self {
+            node_id: 0,
+            typ: VNodeType::CheckBrowser,
+            wprops: WidgetProps::default(),
+            items: items.iter().map(|(s, c)| (s.to_string(), *c)).collect(),
+            on_change: None,
+        }
+    }
+    pub fn on_change<F: 'static + Fn(Vec<i32>) -> Message>(mut self, f: F) -> Self {
+        self.on_change = Some(Rc::new(Box::new(f)));
+        self
+    }
+}
+
+impl<Message: Clone + 'static + Send + Sync> VNode<Message> for CheckBrowser<Message> {
+    default_impl!();
+    fn gprops(&mut self) -> Option<&mut GroupProps<Message>> {
+        None
+    }
+    fn mount(&self, dom: &VirtualDom<Message>) {
+        let mut b = browser::CheckBrowser::default();
+        default_mount!(b, self, dom, CheckBrowser, {
+            for (item, checked) in &self.items {
+                b.add(item, *checked);
+            }
+            let on_change = self.on_change.clone();
+            b.set_callback(move |b| {
+                if let Some(on_change) = &on_change {
+                    let mut checked: Vec<i32> = Vec::new();
+                    for i in 1..=b.size() {
+                        let ii = i as i32;
+                        if b.checked(ii) {
+                            checked.push(ii);
+                        }
+                    }
+                    app::Sender::<Message>::get().send(on_change(checked));
+                }
+            });
+        });
+    }
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+        let b;
+        default_patch!(b, self, old, dom, CheckBrowser, {
+            let old: &CheckBrowser<Message> = old.as_any().downcast_ref().unwrap();
+            if self.items != old.items {
+                b.clear();
+                for (item, checked) in &self.items {
+                    b.add(item, *checked);
+                }
+            }
+            if self.on_change.is_some() != old.on_change.is_some() {
+                let on_change = self.on_change.clone();
+                b.set_callback(move |b| {
+                    if let Some(on_change) = &on_change {
+                        let mut checked: Vec<i32> = Vec::new();
+                        for i in 1..=b.size() {
+                            let ii = i as i32;
+                            if b.checked(ii) {
+                                checked.push(ii);
+                            }
+                        }
+                        app::Sender::<Message>::get().send(on_change(checked));
+                    }
+                });
+            }
+        });
+    }
+}

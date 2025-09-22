@@ -37,7 +37,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Frame<Message> {
         let mut b = frame::Frame::default();
         default_mount!(b, self, dom, Frame);
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, Frame);
     }

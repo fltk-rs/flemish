@@ -9,7 +9,7 @@ pub struct VirtualDom<Message> {
     pub root: Rc<RefCell<View<Message>>>,
     pub widget_map: Rc<RefCell<WidgetMap>>,
     #[allow(clippy::type_complexity)]
-    subscribers: Rc<RefCell<Vec<Rc<dyn Fn(&Message)>>>>,
+    subscribers: Rc<RefCell<Vec<(usize, Rc<dyn Fn(&Message)>)>>>,
 }
 
 impl<Message> VirtualDom<Message>
@@ -33,17 +33,24 @@ where
         dom
     }
 
-    pub(crate) fn subscribe<F: 'static + Fn(&Message)>(&self, callback: F) {
-        self.subscribers.borrow_mut().push(Rc::new(callback));
+    pub(crate) fn subscribe_owned<F: 'static + Fn(&Message)>(&self, owner: usize, callback: F) {
+        self.subscribers
+            .borrow_mut()
+            .push((owner, Rc::new(callback)));
+    }
+
+    pub(crate) fn unsubscribe_owner(&self, owner: usize) {
+        self.subscribers.borrow_mut().retain(|(id, _)| *id != owner);
     }
 
     pub(crate) fn dispatch(&self, message: Message) {
-        for subscriber in self.subscribers.borrow().iter() {
+        for (_, subscriber) in self.subscribers.borrow().iter() {
             subscriber(&message);
         }
     }
 
     pub(crate) fn patch(&self, new: View<Message>) {
+        let mut new = new;
         let mut old = self.root.borrow_mut();
         new.patch(&mut old, self);
         *old = new;

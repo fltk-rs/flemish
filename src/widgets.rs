@@ -1,6 +1,6 @@
 use fltk::{
     browser::*, button::*, frame::Frame, group::*, input::*, menu::*, misc::*, output::*,
-    prelude::WidgetExt, table::*, text::*, tree::*, valuator::*, widget::Widget,
+    prelude::WidgetExt, table::*, text::*, tree::*, valuator::*, widget::Widget, window::*,
 };
 use std::any::Any;
 use std::collections::HashMap;
@@ -96,6 +96,7 @@ pub enum WidgetUnion {
     Table(Table),
     TableRow(TableRow),
     Tree(Tree),
+    Window(Window),
     Other(Rc<dyn IsWidget>),
 }
 
@@ -172,6 +173,7 @@ impl WidgetUnion {
             WidgetUnion::Table(w) => w.as_widget(),
             WidgetUnion::TableRow(w) => w.as_widget(),
             WidgetUnion::Tree(w) => w.as_widget(),
+            WidgetUnion::Window(w) => w.as_widget(),
             WidgetUnion::Other(w) => w.as_widget(),
         }
     }

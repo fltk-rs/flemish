@@ -80,7 +80,7 @@ macro_rules! define_input {
                     });
                 });
             }
-            fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+            fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();

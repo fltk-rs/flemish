@@ -10,6 +10,7 @@ mod table;
 mod text;
 mod tree;
 mod valuator;
+mod window;
 
 pub use browser::*;
 pub use button::*;
@@ -23,6 +24,7 @@ pub use table::*;
 pub use text::*;
 pub use tree::*;
 pub use valuator::*;
+pub use window::*;
 
 pub use crate::vnode::HasProps;
 pub use crate::vnode::{VNode, View};

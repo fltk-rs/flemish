@@ -63,6 +63,10 @@ impl<Message> Button<Message> {
             bprops: ButtonProps::default(),
         }
     }
+    pub fn shortcut(mut self, s: enums::Shortcut) -> Self {
+        self.bprops.shortcut = Some(s);
+        self
+    }
 }
 
 impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Button<Message> {
@@ -78,7 +82,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Button<Message> 
             set_bprops(&mut b, &self.bprops);
         });
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, Button, {
             let old: &Button<Message> = old.as_any().downcast_ref().unwrap();
@@ -118,6 +122,10 @@ macro_rules! define_button {
                     on_change: None,
                 }
             }
+            pub fn shortcut(mut self, s: enums::Shortcut) -> Self {
+                self.bprops.shortcut = Some(s);
+                self
+            }
             pub fn on_change<F: 'static + Fn(bool) -> Message>(mut self, f: F) -> Self {
                 self.on_change = Some(Rc::new(Box::new(f)));
                 self
@@ -143,7 +151,7 @@ macro_rules! define_button {
                     });
                 });
             }
-            fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+            fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();

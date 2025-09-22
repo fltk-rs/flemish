@@ -96,29 +96,31 @@ macro_rules! define_text {
                 });
                 if let Some(ed) = text::TextEditor::from_dyn_widget(&ed) {
                     if let Some(command_handler) = self.on_command.clone() {
-                        dom.subscribe(move |msg| match command_handler(msg.clone()) {
-                            Some(TextEditorCommand::Copy) => {
-                                ed.copy();
+                        dom.subscribe_owned(self.node_id, move |msg| {
+                            match command_handler(msg.clone()) {
+                                Some(TextEditorCommand::Copy) => {
+                                    ed.copy();
+                                }
+                                Some(TextEditorCommand::Cut) => {
+                                    ed.cut();
+                                }
+                                Some(TextEditorCommand::Paste) => {
+                                    ed.paste();
+                                }
+                                Some(TextEditorCommand::BufLen(s)) => {
+                                    app::Sender::<Message>::get().send(s(ed
+                                        .buffer()
+                                        .unwrap()
+                                        .text()
+                                        .len()));
+                                }
+                                _ => (),
                             }
-                            Some(TextEditorCommand::Cut) => {
-                                ed.cut();
-                            }
-                            Some(TextEditorCommand::Paste) => {
-                                ed.paste();
-                            }
-                            Some(TextEditorCommand::BufLen(s)) => {
-                                app::Sender::<Message>::get().send(s(ed
-                                    .buffer()
-                                    .unwrap()
-                                    .text()
-                                    .len()));
-                            }
-                            _ => (),
                         });
                     }
                 }
             }
-            fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+            fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();

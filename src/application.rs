@@ -1,4 +1,6 @@
 use fltk::{enums::Event, prelude::*, *};
+#[cfg(feature = "fltk-accesskit")]
+use fltk_accesskit::builder;
 use std::sync::{atomic::Ordering, Arc};
 
 use crate::id;
@@ -74,7 +76,7 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
         }
         if let Some(color) = settings.selection {
             let c = color.to_rgb();
-            app::set_inactive_color(c.0, c.1, c.2);
+            app::set_selection_color(c.0, c.1, c.2);
         }
         app::set_font_size(settings.font_size);
 
@@ -147,13 +149,23 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
         let last_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
         let current_event = Arc::new(std::sync::atomic::AtomicI32::new(0));
 
+        #[cfg(feature = "fltk-accesskit")]
+        let ac = builder(win.clone()).attach();
+
         win.handle({
             let current_event = current_event.clone();
-            move |_w, ev| {
-                if ev != Event::NoEvent && ev != Event::Move {
-                    current_event.store(ev.bits(), Ordering::Relaxed);
+            move |_w, ev| match ev {
+                #[cfg(feature = "fltk-accesskit")]
+                Event::KeyUp => {
+                    fltk_accesskit::update_focused(&ac);
+                    false
                 }
-                false
+                _ => {
+                    if ev != Event::NoEvent && ev != Event::Move {
+                        current_event.store(ev.bits(), Ordering::Relaxed);
+                    }
+                    false
+                }
             }
         });
 
@@ -180,7 +192,7 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
                 let new_hash = spawn_or_reuse_subscription(&sub);
 
                 if new_hash != current_hash {
-                    let spawned_sub = spawn_new_subscription(sub, s.clone());
+                    let spawned_sub = spawn_new_subscription(sub, s);
                     current_sub = Some(spawned_sub);
                     current_hash = new_hash;
                 } else {
@@ -197,7 +209,7 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
                     vdom.dispatch(msg.clone());
 
                     let command = st.update(&mut t, msg.clone());
-                    command.execute(s.clone());
+                    command.execute(s);
 
                     let new_vdom = st.view_(&t);
                     vdom.patch(new_vdom);
@@ -210,7 +222,7 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
 
                         if new_hash != current_hash {
                             cancel_subscription(current_sub.take());
-                            let spawned_sub = spawn_new_subscription(new_sub, s.clone());
+                            let spawned_sub = spawn_new_subscription(new_sub, s);
                             current_sub = Some(spawned_sub);
                             current_hash = new_hash;
                         } else {

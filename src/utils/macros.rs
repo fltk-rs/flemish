@@ -61,13 +61,15 @@ macro_rules! default_patch {
             $crate::utils::subtree::replace_subtree($old, $self, $dom);
             return;
         }
-        let mut widget = {
+        // keep VDOM identity stable
+        $self.set_node_id($old.node_id());
+        // borrow the actual widget in-place without cloning; keep the borrow guard alive
+        {
             let mut map = $dom.widget_map.borrow_mut();
-            map.get_mut(&$old.node_id()).cloned()
-        };
-        if let Some(WidgetUnion::$var(ref mut f)) = widget {
-            $b = f;
-            update_wprops($b, $old.wprops(), &$self.wprops);
+            if let Some(WidgetUnion::$var(ref mut f)) = map.get_mut(&$old.node_id()) {
+                $b = f;
+                update_wprops($b, $old.wprops(), &$self.wprops);
+            }
         }
     }};
     ($b: ident, $self: expr, $old: expr, $dom: ident, $var: ident, $block1: block) => {{
@@ -75,14 +77,16 @@ macro_rules! default_patch {
             $crate::utils::subtree::replace_subtree($old, $self, $dom);
             return;
         }
-        let mut widget = {
+        // keep VDOM identity stable
+        $self.set_node_id($old.node_id());
+        // borrow the actual widget in-place without cloning; keep the borrow guard alive
+        {
             let mut map = $dom.widget_map.borrow_mut();
-            map.get_mut(&$old.node_id()).cloned()
-        };
-        if let Some(WidgetUnion::$var(ref mut f)) = widget {
-            $b = f;
-            update_wprops($b, $old.wprops(), &$self.wprops);
-            $block1
+            if let Some(WidgetUnion::$var(ref mut f)) = map.get_mut(&$old.node_id()) {
+                $b = f;
+                update_wprops($b, $old.wprops(), &$self.wprops);
+                $block1
+            }
         }
     }};
 }

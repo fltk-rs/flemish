@@ -1,6 +1,6 @@
 [package]
 name = "flemish"
-version = "0.6.5"
+version = "0.7.0"
 authors = ["MoAlyousef <mohammed.alyousef@neurosrg.com>"]
 edition = "2021"
 description = "An Elmish architecture for fltk-rs"
@@ -16,12 +16,16 @@ exclude = ["./examples"]
 fltk = "1.5"
 fltk-theme = "0.7"
 fltk-table = "0.3"
+fltk-accesskit = { version = "0.2.1", optional = true}
 dyn-clone = "1"
 tokio = {version = "1", features = ["rt-multi-thread"] }
 tokio-stream = "0.1"
 futures = "0.3"
 async-stream = "0.3"
 fxhash = "0.2"
+
+[features]
+default = ["fltk-accesskit"]
 
 [dev-dependencies]
 anyhow = "1"

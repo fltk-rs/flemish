@@ -31,6 +31,7 @@ pub enum VNodeType {
     Tile,
     Wizard,
     ColorChooser,
+    Window,
     Grid,
     TextDisplay,
     TextEditor,
@@ -193,7 +194,7 @@ pub trait VNode<Message: 'static>: Any + dyn_clone::DynClone {
     fn as_any_mut(&mut self) -> &mut dyn Any;
     fn gprops(&mut self) -> Option<&mut GroupProps<Message>>;
     fn mount(&self, dom: &VirtualDom<Message>);
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>);
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>);
     fn view(self) -> View<Message>
     where
         Self: Sized,

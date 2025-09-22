@@ -23,6 +23,8 @@ where
         }
     }
     let old_ptr = old.node_id();
+    // Clean up any subscriptions owned by this node
+    dom.unsubscribe_owner(old_ptr);
     if let Some(wu) = dom.widget_map.borrow_mut().remove(&old_ptr) {
         if let Some(mut par) = wu.view().parent() {
             par.remove(&wu.view());

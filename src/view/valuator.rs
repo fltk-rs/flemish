@@ -50,6 +50,18 @@ macro_rules! define_valuator {
                     change_cb: None,
                 }
             }
+            pub fn minimum(mut self, v: f64) -> Self {
+                self.iprops.minimum = v;
+                self
+            }
+            pub fn maximum(mut self, v: f64) -> Self {
+                self.iprops.maximum = v;
+                self
+            }
+            pub fn step(mut self, v: f64) -> Self {
+                self.iprops.step = v;
+                self
+            }
             pub fn on_change<F: 'static + Fn(f64) -> Message>(mut self, f: F) -> Self {
                 self.change_cb = Some(Rc::new(Box::new(f)));
                 self
@@ -73,12 +85,12 @@ macro_rules! define_valuator {
                     b.set_callback(move |b| {
                         let v = b.value();
                         if let Some(change_cb) = &change_cb {
-                            app::Sender::<Message>::get().send(change_cb(v.clone()));
+                            app::Sender::<Message>::get().send(change_cb(v));
                         }
                     });
                 });
             }
-            fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+            fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();
@@ -90,7 +102,7 @@ macro_rules! define_valuator {
                         b.set_callback(move |b| {
                             let v = b.value();
                             if let Some(change_cb) = &change_cb {
-                                app::Sender::<Message>::get().send(change_cb(v.clone()));
+                                app::Sender::<Message>::get().send(change_cb(v));
                             }
                         });
                     }
@@ -136,6 +148,18 @@ macro_rules! define_valuator_with_tprops {
                     change_cb: None,
                 }
             }
+            pub fn minimum(mut self, v: f64) -> Self {
+                self.iprops.minimum = v;
+                self
+            }
+            pub fn maximum(mut self, v: f64) -> Self {
+                self.iprops.maximum = v;
+                self
+            }
+            pub fn step(mut self, v: f64) -> Self {
+                self.iprops.step = v;
+                self
+            }
             pub fn on_change<F: 'static + Fn(f64) -> Message>(mut self, f: F) -> Self {
                 self.change_cb = Some(Rc::new(Box::new(f)));
                 self
@@ -160,12 +184,12 @@ macro_rules! define_valuator_with_tprops {
                     b.set_callback(move |b| {
                         let v = b.value();
                         if let Some(change_cb) = &change_cb {
-                            app::Sender::<Message>::get().send(change_cb(v.clone()));
+                            app::Sender::<Message>::get().send(change_cb(v));
                         }
                     });
                 });
             }
-            fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+            fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
                 let b;
                 default_patch!(b, self, old, dom, $name, {
                     let old: &$name<Message> = old.as_any().downcast_ref().unwrap();
@@ -178,7 +202,7 @@ macro_rules! define_valuator_with_tprops {
                         b.set_callback(move |b| {
                             let v = b.value();
                             if let Some(change_cb) = &change_cb {
-                                app::Sender::<Message>::get().send(change_cb(v.clone()));
+                                app::Sender::<Message>::get().send(change_cb(v));
                             }
                         });
                     }
@@ -248,7 +272,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for HorScrollbar<Mes
             });
         });
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, HorScrollbar, {
             let old: &HorScrollbar<Message> = old.as_any().downcast_ref().unwrap();

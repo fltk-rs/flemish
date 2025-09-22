@@ -123,7 +123,7 @@ mod custom {
         }
 
         // Our patch function which will update our widget in case of change
-        fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+        fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
             if self.typ != *old.typ() {
                 utils::subtree::replace_subtree(old, self, dom);
                 return;

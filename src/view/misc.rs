@@ -42,7 +42,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Clock<Message> {
         b.set_type(self.clock_type);
         default_mount!(b, self, dom, Clock);
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, Clock, {
             let old: &Clock<Message> = old.as_any().downcast_ref().unwrap();
@@ -115,7 +115,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Chart<Message> {
             }
         });
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, Chart, {
             let old: &Chart<Message> = old.as_any().downcast_ref().unwrap();
@@ -167,7 +167,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Progress<Message
             b.set_value(self.value);
         });
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, Progress, {
             let old: &Progress<Message> = old.as_any().downcast_ref().unwrap();
@@ -212,7 +212,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for Spinner<Message>
         set_tprops!(b, self.tprops);
         default_mount!(b, self, dom, Spinner);
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, Spinner, {
             let old: &Spinner<Message> = old.as_any().downcast_ref().unwrap();
@@ -255,13 +255,85 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for HelpView<Message
         b.set_value(&self.value);
         default_mount!(b, self, dom, HelpView);
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, HelpView, {
             let old: &HelpView<Message> = old.as_any().downcast_ref().unwrap();
             update_tprops!(b, self.tprops, old.tprops);
             if self.value != old.value {
                 b.set_value(&self.value);
+            }
+        });
+    }
+}
+
+#[derive(Clone)]
+pub struct ColorChooser<Message> {
+    node_id: usize,
+    typ: VNodeType,
+    wprops: WidgetProps,
+    value: enums::Color,
+    #[allow(clippy::type_complexity)]
+    on_change: Option<std::rc::Rc<Box<dyn Fn(enums::Color) -> Message>>>,
+}
+
+impl<Message> ColorChooser<Message> {
+    pub fn new(initial: enums::Color) -> Self {
+        Self {
+            node_id: 0,
+            typ: VNodeType::ColorChooser,
+            wprops: WidgetProps::default(),
+            value: initial,
+            on_change: None,
+        }
+    }
+    pub fn on_change<F: 'static + Fn(enums::Color) -> Message>(mut self, f: F) -> Self {
+        self.on_change = Some(std::rc::Rc::new(Box::new(f)));
+        self
+    }
+    pub fn value(mut self, col: enums::Color) -> Self {
+        self.value = col;
+        self
+    }
+}
+
+impl<Message: Clone + 'static + Send + Sync> VNode<Message> for ColorChooser<Message> {
+    default_impl!();
+    fn gprops(&mut self) -> Option<&mut GroupProps<Message>> {
+        None
+    }
+    fn mount(&self, dom: &VirtualDom<Message>) {
+        let mut b = group::ColorChooser::default();
+        default_mount!(b, self, dom, ColorChooser, {
+            let (r, g, bcol) = self.value.to_rgb();
+            let _ = b.set_rgb(r, g, bcol);
+            let on_change = self.on_change.clone();
+            b.set_callback(move |c| {
+                let (rr, gg, bb) = c.rgb_color();
+                if let Some(on_change) = &on_change {
+                    let col = enums::Color::from_rgb(rr, gg, bb);
+                    app::Sender::<Message>::get().send(on_change(col));
+                }
+            });
+        });
+    }
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+        let b;
+        default_patch!(b, self, old, dom, ColorChooser, {
+            let old: &ColorChooser<Message> = old.as_any().downcast_ref().unwrap();
+            if self.value != old.value {
+                let (r, g, bcol) = self.value.to_rgb();
+                let _ = b.set_rgb(r, g, bcol);
+            }
+            if self.on_change.is_some() != old.on_change.is_some() {
+                let on_change = self.on_change.clone();
+                b.set_callback(move |c| {
+                    let (rr, gg, bb) = c.rgb_color();
+                    if let Some(on_change) = &on_change {
+                        let col = enums::Color::from_rgb(rr, gg, bb);
+                        app::Sender::<Message>::get().send(on_change(col));
+                    }
+                });
             }
         });
     }
@@ -301,7 +373,7 @@ impl<Message: Clone + 'static + Send + Sync> VNode<Message> for InputChoice<Mess
         set_tprops!(b, self.tprops);
         default_mount!(b, self, dom, InputChoice);
     }
-    fn patch(&self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
+    fn patch(&mut self, old: &mut View<Message>, dom: &VirtualDom<Message>) {
         let b;
         default_patch!(b, self, old, dom, InputChoice, {
             let old: &InputChoice<Message> = old.as_any().downcast_ref().unwrap();
