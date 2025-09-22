@@ -109,12 +109,6 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
             win.set_callback(move |_| {
                 app::Sender::<Message>::get().send(close.clone());
             });
-        } else if settings.ignore_esc_close {
-            win.set_callback(move |_| {
-                if app::event() == enums::Event::Close {
-                    app::quit();
-                }
-            });
         }
         win.make_resizable(settings.resizable);
         let rt = if let Some(worker_threads) = settings.worker_threads {
@@ -152,17 +146,32 @@ impl<T, Message: Clone + Send + Sync + 'static, U: Into<Task<Message>>> Applicat
         #[cfg(feature = "fltk-accesskit")]
         let ac = builder(win.clone()).attach();
 
+        let ignore_esc_close = self
+            .settings
+            .as_ref()
+            .map(|s| s.ignore_esc_close)
+            .unwrap_or(false);
+
         win.handle({
             let current_event = current_event.clone();
             move |_w, ev| match ev {
                 #[cfg(feature = "fltk-accesskit")]
                 Event::KeyUp => {
                     fltk_accesskit::update_focused(&ac);
+                    current_event.store(ev.bits(), Ordering::Relaxed);
                     false
                 }
                 _ => {
                     if ev != Event::NoEvent && ev != Event::Move {
                         current_event.store(ev.bits(), Ordering::Relaxed);
+                    }
+                    if ignore_esc_close {
+                        if ev == Event::Close {
+                            return true;
+                        }
+                        if ev == Event::KeyDown && app::event_key() == enums::Key::Escape {
+                            return true;
+                        }
                     }
                     false
                 }
