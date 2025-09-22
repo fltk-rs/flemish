@@ -21,6 +21,7 @@ where
 struct DisplayOpts {
     value: String,
     linenumber_width: i32,
+    load_path: Option<String>,
 }
 
 macro_rules! define_text {
@@ -52,6 +53,10 @@ macro_rules! define_text {
                     on_command: None,
                 }
             }
+            pub fn load_file(mut self, path: &str) -> Self {
+                self.iprops.load_path = Some(path.to_string());
+                self
+            }
             pub fn on_input<F: 'static + Fn(String) -> Message>(mut self, f: F) -> Self {
                 self.wprops.when =
                     Some(enums::CallbackTrigger::Changed | enums::CallbackTrigger::EnterKeyAlways);
@@ -80,7 +85,11 @@ macro_rules! define_text {
                 let mut b = text::$name::default();
                 let buf = text::TextBuffer::default();
                 b.set_buffer(buf);
-                b.buffer().unwrap().set_text(&self.iprops.value);
+                if let Some(p) = &self.iprops.load_path {
+                    let _ = b.buffer().unwrap().load_file(p);
+                } else {
+                    b.buffer().unwrap().set_text(&self.iprops.value);
+                }
                 let change_cb = self.change_cb.clone();
                 b.set_callback(move |b| {
                     let v = b.buffer().unwrap().text();
@@ -127,6 +136,13 @@ macro_rules! define_text {
                     update_tprops!(b, self.tprops, old.tprops);
                     let oldi = &old.iprops;
                     let newi = &self.iprops;
+                    if oldi.load_path != newi.load_path {
+                        if let Some(p) = &newi.load_path {
+                            if let Some(mut buf) = b.buffer() {
+                                let _ = buf.load_file(p);
+                            }
+                        }
+                    }
                     if oldi.linenumber_width != newi.linenumber_width {
                         b.set_linenumber_width(self.iprops.linenumber_width);
                     }
